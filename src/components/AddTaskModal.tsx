@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Input, Slider, DatePicker, Select, Button, Typography } from 'antd';
+import { Modal, Input, Slider, DatePicker, Select, Button, Typography, Checkbox } from 'antd';
 import { Task, Faction } from '../types';
 import dayjs from 'dayjs';
 
@@ -9,31 +9,56 @@ const { Option } = Select;
 interface AddTaskModalProps {
     visible: boolean;
     onClose: () => void;
-    onAdd: (title: string, faction: Faction, difficulty: number, dueDate: Date) => void;
+    onAdd: (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring: boolean) => void;
     initialKeyword?: string;
+    initialTask?: Task | null;
 }
 
-export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, onAdd, initialKeyword = '' }) => {
+export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, onAdd, initialKeyword = '', initialTask }) => {
     const [title, setTitle] = useState(initialKeyword);
     const [difficulty, setDifficulty] = useState(1);
     const [faction, setFaction] = useState<Faction>('orks');
+    const [isRecurring, setIsRecurring] = useState(false);
     // @ts-ignore
     const [dueDate, setDueDate] = useState<dayjs.Dayjs>(dayjs().add(12, 'hour'));
 
-    // Auto-detect faction based on title
+    // Effect to handle edit mode vs new mode
     React.useEffect(() => {
-        setTitle(initialKeyword);
-        if (/[打掃家務洗]/.test(initialKeyword)) setFaction('nurgle');
-        else if (/[學習程式代碼]/.test(initialKeyword)) setFaction('tzeentch');
-        else if (/[健身運動困難]/.test(initialKeyword)) setFaction('khorne');
-        else if (/[修改bug]/.test(initialKeyword.toLowerCase())) setFaction('necrons');
-        else setFaction('orks');
-    }, [initialKeyword]);
+        if (visible) {
+            if (initialTask) {
+                // Edit Mode
+                setTitle(initialTask.title);
+                setDifficulty(initialTask.difficulty);
+                setFaction(initialTask.faction);
+                setIsRecurring(initialTask.isRecurring || false);
+                // @ts-ignore
+                setDueDate(dayjs(initialTask.dueDate));
+            } else {
+                // New Mode
+                setTitle(initialKeyword);
+                setDifficulty(1);
+                setFaction('orks');
+                setIsRecurring(false);
+                // @ts-ignore
+                setDueDate(dayjs().add(12, 'hour'));
+            }
+        }
+    }, [visible, initialTask, initialKeyword]);
+
+    // Auto-detect faction based on title (only for new tasks)
+    React.useEffect(() => {
+        if (!initialTask && /[打掃家務洗]/.test(title)) setFaction('nurgle');
+        else if (!initialTask && /[學習程式代碼]/.test(title)) setFaction('tzeentch');
+        else if (!initialTask && /[健身運動困難]/.test(title)) setFaction('khorne');
+        else if (!initialTask && /[修改bug]/.test(title.toLowerCase())) setFaction('necrons');
+        // keep existing decision if not matched or editing
+    }, [title, initialTask]);
 
     const handleSubmit = () => {
         if (!title.trim()) return;
-        onAdd(title, faction, difficulty, dueDate.toDate());
+        onAdd(title, faction, difficulty, dueDate.toDate(), isRecurring);
         setTitle('');
+        setIsRecurring(false);
         onClose();
     };
 
@@ -93,12 +118,30 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
                     <Slider
                         min={1}
                         max={5}
+                        step={1}
+                        marks={{
+                            1: '微小',
+                            2: '低度',
+                            3: '中度',
+                            4: '高度',
+                            5: '極限'
+                        }}
                         value={difficulty}
                         onChange={setDifficulty}
                         railStyle={{ backgroundColor: '#333' }}
                         trackStyle={{ backgroundColor: '#ef4444' }}
                         handleStyle={{ borderColor: '#ef4444', backgroundColor: '#ef4444' }}
                     />
+                </div>
+
+                <div className="flex items-center gap-2 pt-4">
+                    <Checkbox
+                        checked={isRecurring}
+                        onChange={e => setIsRecurring(e.target.checked)}
+                        className="!text-imperial-gold font-mono"
+                    >
+                        每日固定任務 (IMPERIAL MANDATE)
+                    </Checkbox>
                 </div>
 
                 <Button

@@ -2,73 +2,193 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --void-black: #000000;
-    --imperial-gold: #fbbf24;
-    --mechanicus-red: #ef4444;
-    --warp-purple: #a855f7;
-    --nurgle-green: #10b981;
+@font-face {
+  font-family: 'Share Tech Mono';
+  src: url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+}
+
+body {
+  margin: 0;
+  background-color: #000;
+  font-family: 'Share Tech Mono', monospace;
+  overflow: hidden;
+}
+
+.device-font {
+  font-family: 'Share Tech Mono', monospace;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #111;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #fbbf24;
+  border-radius: 3px;
+}
+
+/* Global Scanline Effect */
+.scanline {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  background: linear-gradient(to bottom,
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 0) 50%,
+      rgba(0, 0, 0, 0.2) 50%,
+      rgba(0, 0, 0, 0.2));
+  background-size: 100% 4px;
+  animation: scanline 0.2s linear infinite;
+  z-index: 50;
+  opacity: 0.1;
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(0);
   }
 
-  body {
-    @apply bg-black text-imperial-gold;
-    margin: 0;
-    font-family: 'Microsoft JhengHei', '微軟正黑體', 'SF Mono', Monaco, Courier, monospace;
-    background-color: var(--void-black);
-    overflow-x: hidden;
-  }
-
-  /* 隱藏捲軸但保留功能 */
-  ::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: #000;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: var(--imperial-gold);
-    border-radius: 10px;
+  100% {
+    transform: translateY(4px);
   }
 }
 
-@layer components {
+/* Glitch Effect */
+.glitch-container {
+  animation: shake 0.2s infinite;
+  filter: hue-rotate(90deg) blur(0.5px);
+}
 
-  /* 掃描線動畫 */
-  .scanline {
-    width: 100%;
-    height: 2px;
-    background: rgba(251, 191, 36, 0.1);
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 9999;
-    pointer-events: none;
-    animation: scan 4s linear infinite;
+@keyframes shake {
+  0% {
+    transform: translate(1px, 1px) rotate(0deg);
   }
 
-  @keyframes scan {
-    0% {
-      top: -10%;
-    }
-
-    100% {
-      top: 110%;
-    }
+  10% {
+    transform: translate(-1px, -2px) rotate(-1deg);
   }
 
-  /* 金色光暈卡片 */
-  .imperial-card {
-    background: rgba(10, 10, 10, 0.9) !important;
-    border: 1px solid rgba(251, 191, 36, 0.3) !important;
-    box-shadow: 0 0 15px rgba(251, 191, 36, 0.1);
-    transition: all 0.3s ease;
+  20% {
+    transform: translate(-3px, 0px) rotate(1deg);
   }
 
-  .imperial-card:hover {
-    box-shadow: 0 0 25px rgba(251, 191, 36, 0.2);
-    border-color: rgba(251, 191, 36, 0.6) !important;
+  30% {
+    transform: translate(3px, 2px) rotate(0deg);
+  }
+
+  40% {
+    transform: translate(1px, -1px) rotate(1deg);
+  }
+
+  50% {
+    transform: translate(-1px, 2px) rotate(-1deg);
+  }
+
+  60% {
+    transform: translate(-3px, 1px) rotate(0deg);
+  }
+
+  70% {
+    transform: translate(3px, 1px) rotate(-1deg);
+  }
+
+  80% {
+    transform: translate(-1px, -1px) rotate(1deg);
+  }
+
+  90% {
+    transform: translate(1px, 2px) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(1px, -2px) rotate(-1deg);
+  }
+}
+
+.glitch-text {
+  position: relative;
+}
+
+.glitch-text::before,
+.glitch-text::after {
+  content: "EXTERMINATUS";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.glitch-text::before {
+  left: 2px;
+  text-shadow: -1px 0 #00ffff;
+  clip: rect(44px, 450px, 56px, 0);
+  animation: glitch-anim 5s infinite linear alternate-reverse;
+}
+
+.glitch-text::after {
+  left: -2px;
+  text-shadow: -1px 0 #ff00ff;
+  clip: rect(44px, 450px, 56px, 0);
+  animation: glitch-anim2 5s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-anim {
+  0% {
+    clip: rect(11px, 9999px, 81px, 0);
+  }
+
+  20% {
+    clip: rect(87px, 9999px, 96px, 0);
+  }
+
+  40% {
+    clip: rect(31px, 9999px, 11px, 0);
+  }
+
+  60% {
+    clip: rect(59px, 9999px, 63px, 0);
+  }
+
+  80% {
+    clip: rect(2px, 9999px, 27px, 0);
+  }
+
+  100% {
+    clip: rect(48px, 9999px, 6px, 0);
+  }
+}
+
+@keyframes glitch-anim2 {
+  0% {
+    clip: rect(69px, 9999px, 83px, 0);
+  }
+
+  20% {
+    clip: rect(16px, 9999px, 2px, 0);
+  }
+
+  40% {
+    clip: rect(93px, 9999px, 66px, 0);
+  }
+
+  60% {
+    clip: rect(21px, 9999px, 86px, 0);
+  }
+
+  80% {
+    clip: rect(54px, 9999px, 37px, 0);
+  }
+
+  100% {
+    clip: rect(3px, 9999px, 72px, 0);
   }
 }

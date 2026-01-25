@@ -8,6 +8,8 @@ export interface Task {
     dueDate: Date;
     createdAt: Date;
     status: 'active' | 'completed' | 'failed';
+    isRecurring?: boolean; // 每日固定任務
+    lastCompletedAt?: Date; // 上次完成日期
 }
 
 export interface Resources {
@@ -22,3 +24,43 @@ export interface Unit {
     description: string;
     icon?: React.ReactNode;
 }
+
+export interface SubTask {
+    id: string;
+    title: string;
+    completed: boolean;
+}
+
+export interface Project {
+    id: string;
+    title: string;
+    month: string; // e.g., "M31.005"
+    difficulty: number;
+    subTasks: SubTask[];
+    completed: boolean;
+}
+
+export interface UnitCount {
+    guardsmen: number;
+    spaceMarines: number;
+    custodes: number;
+    dreadnought: number;
+    baneblade: number;
+}
+
+export interface ArmyStrength {
+    reserves: UnitCount;
+    garrisons: Record<string, UnitCount>; // e.g. "M1": { guardsmen: 10, ... }
+    totalActivePower: number; // Sum of all garrisons' power (Effective Defense)
+}
+
+export type PlanetaryTraitType = 'hive' | 'forge' | 'death' | 'shrine' | 'barren';
+
+export interface SectorTrait {
+    month: string;
+    type: PlanetaryTraitType;
+}
+
+export type BattleResult = 'victory' | 'defeat';
+
+export type SectorHistory = Record<string, BattleResult>; // e.g. "M1": "victory"

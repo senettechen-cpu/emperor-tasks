@@ -1,13 +1,19 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ConfigProvider, Input, Typography, theme, Button } from 'antd'
 import zhTW from 'antd/locale/zh_TW'
-import { Plus, ShoppingCart, AlertTriangle } from 'lucide-react'
+import { Plus, ShoppingCart, AlertTriangle, Map as MapIcon } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { RadarView } from './components/RadarView'
+import { RadarView } from './components/RadarView' // Keep old one just in case, or remove
+import { OrbitalRadar } from './components/OrbitalRadar'
 import { WeaponDeck } from './components/WeaponDeck'
 import { UnitShop } from './components/UnitShop'
 import { AddTaskModal } from './components/AddTaskModal'
+import { Armory } from './components/Armory'
+import { NavigationArray } from './components/NavigationArray'
+import { SectorMap } from './components/SectorMap'
+import TaskDataSlate from './components/TaskDataSlate' // Added
 import { GameProvider, useGame } from './contexts/GameContext'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import './App.css'
 
 const { Title, Text } = Typography;
@@ -16,15 +22,42 @@ const { Title, Text } = Typography;
 const MainDashboard = () => {
   const {
     tasks, resources, corruption, ownedUnits, isPenitentMode,
-    addTask, purgeTask, buyUnit, cheatCorruption, resetGame
+    addTask, updateTask, purgeTask, buyUnit, cleanseCorruption, resetGame, viewMode
   } = useGame();
 
   const [keyword, setKeyword] = useState('');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isShopOpen, setIsShopOpen] = useState(false);
+  const [isArmoryOpen, setIsArmoryOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<any>(null); // Task | null
+  const [slateViewMode, setSlateViewMode] = useState<'active' | 'mandates'>('active');
+  const [showRpFeedback, setShowRpFeedback] = useState(false);
 
-  const activeTasks = useMemo(() => tasks.filter(t => t.status === 'active'), [tasks]);
+  // RP Feedback Animation Trigger
+  useEffect(() => {
+    if (resources.rp > 0 && resources.rp % 10 === 0) {
+      setShowRpFeedback(true);
+      const timer = setTimeout(() => setShowRpFeedback(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [resources.rp]);
+
+  const activeTasks = useMemo(() => {
+    if (slateViewMode === 'mandates') {
+      return tasks.filter(t => t.isRecurring);
+    }
+
+    const todayStr = new Date().toLocaleDateString();
+    return tasks.filter(t => {
+      if (t.status !== 'active') return false;
+      if (t.isRecurring) {
+        const lastCompStr = t.lastCompletedAt ? new Date(t.lastCompletedAt).toLocaleDateString() : '';
+        return lastCompStr !== todayStr;
+      }
+      return true;
+    });
+  }, [tasks, slateViewMode]);
   const selectedTask = useMemo(() => activeTasks.find(t => t.id === selectedTaskId), [selectedTaskId, activeTasks]);
 
   const handleQuickAdd = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -35,104 +68,153 @@ const MainDashboard = () => {
 
   if (isPenitentMode) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-mechanicus-red font-mono p-8 animate-shake">
-        <div className="fixed inset-0 bg-red-900/20 z-0 animate-pulse" />
-        <Title level={1} className="!text-red-500 text-6xl tracking-widest z-10 glitch-text">泰拉失守</Title>
-        <Title level={3} className="!text-red-500/80 z-10 mb-12">FALL OF TERRA // SYSTEM FAILURE</Title>
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-red-600 font-mono p-8 animate-pulse relative overflow-hidden">
+        {/* Background Glitch */}
+        <div className="absolute inset-0 bg-red-950/50 z-0 glitch" />
 
-        <div className="w-full max-w-2xl border-2 border-red-600 p-8 z-10 bg-black">
-          <Text className="block text-red-500 mb-4 text-center tracking-[0.3em] font-bold">過期任務清單 (OVERDUE MANIFEST)</Text>
-          <ul className="list-disc pl-8 space-y-2 text-red-400">
-            {activeTasks.map(t => (
-              <li key={t.id} className="uppercase flex justify-between">
-                <span>{t.title}</span>
-                <span className="text-red-600 font-bold">{t.faction}</span>
-              </li>
-            ))}
-          </ul>
+        <h1 className="!text-red-500 text-8xl tracking-widest z-10 glitch-text font-black scale-150 m-0">滅絕令執行中</h1>
+        <h3 className="!text-red-500/80 z-10 mb-12 tracking-[0.5em] uppercase m-0">世界已遭淨化</h3>
+
+        <div className="w-full max-w-2xl border-4 border-red-600 p-8 z-10 bg-black/90 text-center">
+          <span className="block text-red-500 mb-4 text-center tracking-[0.3em] font-bold text-2xl">失敗即異端</span>
+          <span className="text-red-400 font-mono">系統已因腐壞過高而執行滅絕令。</span>
+          <span className="text-red-400 font-mono block mt-2">請重啟系統並重新效忠。</span>
         </div>
 
         <Button
           danger
           size="large"
-          className="mt-12 z-10 border-2 border-red-500 bg-red-900/20 hover:bg-red-500 hover:text-black tracking-widest text-xl h-16 px-12"
+          className="mt-12 z-10 border-2 border-red-500 bg-red-900/20 hover:bg-red-500 hover:text-black tracking-widest text-xl h-16 px-12 uppercase font-bold"
           onClick={resetGame}
         >
-          發動贖罪遠征 (重啟系統)
+          重新初始化邏輯引擎
         </Button>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen bg-black relative flex flex-col items-center overflow-hidden transition-all duration-300 ${corruption > 80 ? 'animate-glitch' : ''}`}>
+    <div className={`h-screen bg-black relative flex flex-col items-center overflow-hidden transition-all duration-300 ${corruption > 50 ? 'glitch-container' : ''}`}>
       <div className="scanline" />
 
       <header className="w-full flex justify-between items-center p-6 border-b border-imperial-gold/20 z-10 bg-black/80 backdrop-blur-sm">
         <div className="flex flex-col">
-          <Text className="text-imperial-gold font-mono tracking-[0.2em] text-xs opacity-60">IMPERIAL DATE</Text>
-          <Text className="text-imperial-gold font-bold text-xl tracking-widest font-mono">0 126 024.M3</Text>
+          <span className="text-imperial-gold font-mono tracking-[0.2em] text-xs opacity-60">帝國曆</span>
+          <span className="text-imperial-gold font-bold text-xl tracking-widest font-mono">0 126 024.M3</span>
         </div>
 
-        <div className="flex flex-col items-center cursor-pointer" onClick={cheatCorruption} title="Click to Simulate Corruption (+10%)">
-          <Title level={4} className="!text-mechanicus-red !m-0 !tracking-[0.5em] animate-pulse">
-            {corruption > 50 ? '!! 亞空間震盪 DETECTED !!' : 'CORRUPTION LEVEL'}
-          </Title>
+        <div
+          className="flex flex-col items-center cursor-pointer group"
+          onClick={cleanseCorruption}
+          title={resources.rp >= 20 ? "啟動淨化協議 (-20 RP / -30 腐壞)" : "資源不足"}
+        >
+          <h4 className={`!m-0 !tracking-[0.5em] transition-colors duration-300 text-xl font-bold ${corruption > 50 ? '!text-red-500 animate-pulse' : '!text-mechanicus-red'}`}>
+            <span>{corruption > 50 ? '!! 亞空間裂隙開啟 !!' : '目前腐壞程度'}</span>
+          </h4>
           <div className="w-64 h-2 bg-zinc-900 border border-mechanicus-red/30 mt-2 relative overflow-hidden">
             <div
-              className="h-full bg-mechanicus-red transition-all duration-1000"
+              className={`h-full transition-all duration-1000 ${corruption > 80 ? 'bg-red-600' : 'bg-mechanicus-red'}`}
               style={{ width: `${corruption}%` }}
             />
           </div>
+          <span className="text-[10px] text-red-500/50 mt-1 opacity-0 group-hover:opacity-100 transition-opacity font-mono">
+            [ 點擊淨化 : 20 RP ]
+          </span>
         </div>
 
         <div className="flex gap-8 items-center cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setIsShopOpen(true)}>
-          <div className="text-right">
-            <Text className="block text-imperial-gold/50 text-xs tracking-wider">帝皇之怒 (RP)</Text>
-            <Text className="text-imperial-gold device-font text-2xl">{resources.rp}</Text>
+          <div className="text-right relative">
+            <span className="block text-imperial-gold/50 text-xs tracking-wider">帝皇之怒 (RP)</span>
+            <div className="flex items-center justify-end gap-2">
+              <span key={`rp-${resources.rp}`} className="text-imperial-gold device-font text-2xl">{resources.rp}</span>
+
+              {/* Floating +10 Feedback - Stable DOM Version */}
+              <div className="absolute right-0 -top-4 pointer-events-none">
+                <span
+                  className={`text-xs font-bold text-green-400 font-mono transition-opacity duration-300 ${showRpFeedback ? 'opacity-100 animate-bounce' : 'opacity-0'}`}
+                >
+                  +10
+                </span>
+              </div>
+            </div>
           </div>
           <div className="text-right">
-            <Text className="block text-white/50 text-xs tracking-wider">榮耀值 (GLORY)</Text>
-            <Text className="text-white device-font text-2xl">{resources.glory}</Text>
+            <span className="block text-white/50 text-xs tracking-wider">榮耀值 (GLORY)</span>
+            <span className="text-white device-font text-2xl">{resources.glory}</span>
           </div>
-          <ShoppingCart className="text-imperial-gold" />
         </div>
       </header>
 
-      <main className="flex-1 w-full flex flex-col items-center justify-center relative">
-        <RadarView
-          tasks={activeTasks}
-          selectedId={selectedTaskId}
-          onSelectKey={setSelectedTaskId}
-        />
+      <main className="flex-1 w-full flex flex-row overflow-hidden relative">
+        {viewMode === 'tactical' ? (
+          <>
+            {/* LEFT PANEL: Task Data & Input */}
+            <div className="w-1/2 h-full flex flex-col border-r border-imperial-gold/20 bg-black/40 relative z-20">
+              <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-imperial-gold/20 scrollbar-track-transparent">
+                <TaskDataSlate
+                  tasks={activeTasks}
+                  selectedId={selectedTaskId}
+                  onSelect={setSelectedTaskId}
+                  onPurge={purgeTask}
+                  onOpenAddModal={() => {
+                    setEditingTask(null);
+                    setIsAddModalOpen(true);
+                  }}
+                  viewMode={slateViewMode}
+                  onToggleView={setSlateViewMode}
+                  onEdit={(task) => {
+                    setEditingTask(task);
+                    setIsAddModalOpen(true);
+                  }}
+                />
+              </div>
 
-        {/* 已購單位展示 (漂浮於雷達周圍) */}
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-          {ownedUnits.includes('dreadnought') && (
-            <div className="absolute top-[20%] right-[20%] text-imperial-gold/20 animate-pulse font-mono">
-              [無畏機甲 DEPLOYED]
+              <div className="p-6 border-t border-imperial-gold/10 bg-black/60 backdrop-blur-sm">
+                <Input
+                  value={keyword}
+                  onChange={e => setKeyword(e.target.value)}
+                  onKeyDown={handleQuickAdd}
+                  placeholder="> 輸入任務代碼並按 ENTER 進行部屬..."
+                  className="!bg-black/80 !border-imperial-gold/50 !text-imperial-gold font-mono h-12 text-center tracking-wider hover:!border-imperial-gold focus:!border-imperial-gold focus:!shadow-[0_0_15px_#fbbf24]"
+                  suffix={<Plus size={16} className="text-imperial-gold/50" />}
+                />
+              </div>
             </div>
-          )}
-          {ownedUnits.includes('barge') && (
-            <div className="absolute top-[10%] text-imperial-gold/10 text-6xl tracking-[1em] w-full text-center font-mono">
-                /// ORBITAL SUPPORT ///
-            </div>
-          )}
-        </div>
 
-        <div className="absolute bottom-12 w-full max-w-lg z-20">
-          <Input
-            value={keyword}
-            onChange={e => setKeyword(e.target.value)}
-            onKeyDown={handleQuickAdd}
-            placeholder="> 輸入任務代碼並按 ENTER 進行部屬..."
-            className="!bg-black/80 !border-imperial-gold/50 !text-imperial-gold font-mono h-12 text-center tracking-wider hover:!border-imperial-gold focus:!border-imperial-gold focus:!shadow-[0_0_15px_#fbbf24]"
-            suffix={<Plus size={16} className="text-imperial-gold/50" />}
-          />
-        </div>
+            {/* RIGHT PANEL: Radar & Visuals */}
+            <div className="w-1/2 h-full relative flex items-center justify-center bg-zinc-900/10">
+              <OrbitalRadar
+                tasks={activeTasks}
+                selectedId={selectedTaskId}
+                onSelectKey={setSelectedTaskId}
+              />
+
+              {/* 已購單位展示 */}
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                {ownedUnits.includes('dreadnought') && (
+                  <div className="absolute top-[20%] right-[20%] text-imperial-gold/20 animate-pulse font-mono">
+                    [無畏機甲 DEPLOYED]
+                  </div>
+                )}
+                {ownedUnits.includes('barge') && (
+                  <div className="absolute top-[10%] text-imperial-gold/10 text-6xl tracking-[1em] w-full text-center font-mono">
+                            /// 軌道支援 ///
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          /* STRATEGIC VIEW */
+          <SectorMap />
+        )}
       </main>
 
-      <footer className="w-full flex justify-center pb-0 z-30">
+      {/* Navigation Array (Fixed Bottom) */}
+      <NavigationArray onOpenArmory={() => setIsArmoryOpen(true)} />
+
+      {/* Legacy Footer (Hidden for now or integrated differently?) */}
+      {/* <footer className="w-full flex justify-center pb-0 z-30">
         <AnimatePresence>
           <motion.div
             className="w-full flex justify-center"
@@ -141,12 +223,17 @@ const MainDashboard = () => {
           >
             <WeaponDeck
               selectedTask={selectedTask}
-              onPurge={() => selectedTaskId && purgeTask(selectedTaskId)}
+              onPurge={() => {
+                if (selectedTaskId) {
+                  purgeTask(selectedTaskId);
+                  setSelectedTaskId(null); // Force UI update immediately
+                }
+              }}
               onTimerStart={() => console.log('Timer Start')}
             />
           </motion.div>
         </AnimatePresence>
-      </footer>
+      </footer> */}
 
       <UnitShop
         visible={isShopOpen}
@@ -160,11 +247,25 @@ const MainDashboard = () => {
         visible={isAddModalOpen}
         onClose={() => {
           setIsAddModalOpen(false);
+          setEditingTask(null);
           setKeyword('');
         }}
-        onAdd={addTask}
+        onAdd={(title, faction, diff, date, isRec) => {
+          if (editingTask) {
+            updateTask(editingTask.id, { title, faction, difficulty: diff, dueDate: date, isRecurring: isRec });
+          } else {
+            addTask(title, faction, diff, date, isRec);
+          }
+        }}
         initialKeyword={keyword}
+        initialTask={editingTask}
       />
+
+      <Armory
+        visible={isArmoryOpen}
+        onClose={() => setIsArmoryOpen(false)}
+      />
+
     </div>
   );
 }
@@ -181,9 +282,11 @@ function App() {
         },
       }}
     >
-      <GameProvider>
-        <MainDashboard />
-      </GameProvider>
+      <ErrorBoundary>
+        <GameProvider>
+          <MainDashboard />
+        </GameProvider>
+      </ErrorBoundary>
     </ConfigProvider>
   )
 }
