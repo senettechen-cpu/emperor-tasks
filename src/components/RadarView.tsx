@@ -88,6 +88,19 @@ export const RadarView: React.FC<RadarViewProps> = ({ tasks, onSelectKey, select
                 const color = FACTION_COLORS[blip.faction as keyof typeof FACTION_COLORS] || FACTION_COLORS.default;
                 const isSelected = selectedId === blip.id;
 
+                // Urgency Calculation
+                const now = new Date().getTime();
+                const due = new Date(blip.dueDate).getTime();
+                const minutesRemaining = (due - now) / (1000 * 60);
+
+                // Animation Logic
+                let animationClass = '';
+                if (minutesRemaining < 0) animationClass = 'animate-ping'; // Overdue: Fast Ping
+                else if (minutesRemaining < 60) animationClass = 'animate-pulse'; // < 1h: Pulse
+
+                // Size Logic: Base 12px + Difficulty * 4
+                const size = 12 + (blip.difficulty * 4);
+
                 return (
                     <motion.button
                         key={blip.id}
@@ -95,8 +108,8 @@ export const RadarView: React.FC<RadarViewProps> = ({ tasks, onSelectKey, select
                         style={{
                             x,
                             y,
-                            width: `${blip.difficulty * 5 + 10}px`,
-                            height: `${blip.difficulty * 5 + 10}px`,
+                            width: `${size}px`,
+                            height: `${size}px`,
                             backgroundColor: color,
                             boxShadow: `0 0 ${isSelected ? '20px' : '10px'} ${color}`,
                             border: isSelected ? '2px solid white' : 'none'
@@ -106,6 +119,11 @@ export const RadarView: React.FC<RadarViewProps> = ({ tasks, onSelectKey, select
                         onClick={() => onSelectKey(blip.id)}
                         whileHover={{ scale: 1.2 }}
                     >
+                        {/* Animation Layer */}
+                        {(minutesRemaining < 60) && (
+                            <div className={`absolute -inset-1 rounded-full bg-inherit opacity-50 ${animationClass}`} />
+                        )}
+
                         {isSelected && (
                             <div className="absolute -inset-4 border border-white/50 rounded-full animate-ping opacity-30" />
                         )}

@@ -29,6 +29,9 @@ app.get('/', (req, res) => {
     res.send('Imperial Vox-Link Active. Praise the Omnissiah.');
 });
 
+import { startScheduler } from './scheduler';
+
 app.listen(port, () => {
     console.log(`[Server]: Server is running at http://localhost:${port}`);
+    startScheduler(); // Initialize Corruption Engine
 });
