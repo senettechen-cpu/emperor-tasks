@@ -22,7 +22,7 @@ const { Title, Text } = Typography;
 const MainDashboard = () => {
   const {
     tasks, resources, corruption, ownedUnits, isPenitentMode,
-    addTask, updateTask, purgeTask, buyUnit, cleanseCorruption, resetGame, viewMode
+    addTask, updateTask, purgeTask, buyUnit, cleanseCorruption, resetGame, viewMode, allTasks
   } = useGame();
 
   // Clock State - Moved to top to prevent conditional hook execution
@@ -52,13 +52,8 @@ const MainDashboard = () => {
     }
   }, [resources.rp]);
 
-  const activeTasks = useMemo(() => {
-    if (slateViewMode === 'mandates') {
-      return tasks.filter(t => t.isRecurring);
-    }
-    return tasks.filter(t => !t.isRecurring);
-  }, [tasks, slateViewMode]);
-  const selectedTask = useMemo(() => activeTasks.find(t => t.id === selectedTaskId), [selectedTaskId, activeTasks]);
+  const currentActiveTasks = slateViewMode === 'mandates' ? allTasks : tasks;
+  const selectedTask = useMemo(() => currentActiveTasks.find(t => t.id === selectedTaskId), [selectedTaskId, currentActiveTasks]);
 
   const handleQuickAdd = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && keyword.trim()) {
@@ -195,7 +190,7 @@ const MainDashboard = () => {
 
               <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-imperial-gold/20 scrollbar-track-transparent">
                 <TaskDataSlate
-                  tasks={activeTasks}
+                  tasks={slateViewMode === 'mandates' ? allTasks : tasks}
                   selectedId={selectedTaskId}
                   onSelect={setSelectedTaskId}
                   onPurge={purgeTask}
@@ -237,7 +232,7 @@ const MainDashboard = () => {
             {/* RIGHT PANEL: Radar & Visuals (Visible by default on Mobile now) */}
             <div className="w-full h-full md:w-1/2 relative flex items-center justify-center bg-zinc-900/10">
               <OrbitalRadar
-                tasks={activeTasks}
+                tasks={tasks}
                 selectedId={selectedTaskId}
                 onSelectKey={(id) => {
                   setSelectedTaskId(id);

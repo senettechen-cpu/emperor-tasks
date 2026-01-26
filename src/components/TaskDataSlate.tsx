@@ -122,49 +122,64 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
             title: '指令',
             key: 'actions',
             width: 140,
-            render: (_: any, record: Task) => (
-                <div className="flex gap-2">
-                    {onEdit && (
-                        <Tooltip title="修改參數">
-                            <Button
-                                size="small"
-                                className="!bg-blue-900/20 !border-blue-500/50 hover:!bg-blue-500 hover:!text-black !text-blue-500 !p-1 h-7 w-7 flex items-center justify-center transition-all"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEdit(record);
-                                }}
-                            >
-                                <FileEdit size={14} />
-                            </Button>
-                        </Tooltip>
-                    )}
+            render: (_: any, record: Task) => {
+                const isRecurring = record.isRecurring;
+                const isCompletedToday = isRecurring && record.lastCompletedAt &&
+                    new Date(record.lastCompletedAt).toLocaleDateString() === new Date().toLocaleDateString();
 
-                    <Tooltip title="執行淨化">
-                        <Button
-                            size="small"
-                            className="!bg-green-900/20 !border-green-500/50 hover:!bg-green-500 hover:!text-black !text-green-500 !p-1 h-7 w-7 flex items-center justify-center transition-all"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onPurge(record.id);
-                            }}
-                        >
-                            <Shield size={14} />
-                        </Button>
-                    </Tooltip>
-                    <Tooltip title="標記無效">
-                        <Button
-                            size="small"
-                            className="!bg-red-900/20 !border-red-500/50 hover:!bg-red-500 hover:!text-black !text-red-500 !p-1 h-7 w-7 flex items-center justify-center transition-all"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onPurge(record.id);
-                            }}
-                        >
-                            <Trash2 size={14} />
-                        </Button>
-                    </Tooltip>
-                </div>
-            ),
+                return (
+                    <div className="flex gap-2 items-center">
+                        {onEdit && (
+                            <Tooltip title="修改參數">
+                                <Button
+                                    size="small"
+                                    className="!bg-blue-900/20 !border-blue-500/50 hover:!bg-blue-500 hover:!text-black !text-blue-500 !p-1 h-7 w-7 flex items-center justify-center transition-all"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onEdit(record);
+                                    }}
+                                >
+                                    <FileEdit size={14} />
+                                </Button>
+                            </Tooltip>
+                        )}
+
+                        {isCompletedToday ? (
+                            <Tag color="green" className="!bg-green-900/20 !border-green-500/50 !text-green-500 font-mono text-[10px] m-0 px-2 py-0.5 animate-pulse">
+                                COMPLETED
+                            </Tag>
+                        ) : (
+                            <Tooltip title="執行淨化">
+                                <Button
+                                    size="small"
+                                    className="!bg-green-900/20 !border-green-500/50 hover:!bg-green-500 hover:!text-black !text-green-500 !p-1 h-7 w-7 flex items-center justify-center transition-all"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onPurge(record.id);
+                                    }}
+                                >
+                                    <Shield size={14} />
+                                </Button>
+                            </Tooltip>
+                        )}
+
+                        {!isRecurring && (
+                            <Tooltip title="標記無效">
+                                <Button
+                                    size="small"
+                                    className="!bg-red-900/20 !border-red-500/50 hover:!bg-red-500 hover:!text-black !text-red-500 !p-1 h-7 w-7 flex items-center justify-center transition-all"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onPurge(record.id);
+                                    }}
+                                >
+                                    <Trash2 size={14} />
+                                </Button>
+                            </Tooltip>
+                        )}
+                    </div>
+                );
+            }
         }
     ], [selectedId, viewMode, onEdit, onPurge]);
 

@@ -44,6 +44,7 @@ interface GameContextType {
     sectorHistory: SectorHistory;
     resolveSector: (monthId: string) => void;
     advanceMonth: () => void; // Debug/Cheat
+    allTasks: Task[]; // Unfiltered list for management
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -602,7 +603,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             deployUnit, recallUnit,
             armyStrength,
             getTraitForMonth, exportSTC, importSTC,
-            currentMonth, sectorHistory, resolveSector, advanceMonth
+            currentMonth, sectorHistory, resolveSector, advanceMonth,
+            allTasks: tasks
         }}>
             {children}
         </GameContext.Provider>
