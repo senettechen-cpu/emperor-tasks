@@ -153,8 +153,8 @@ export const SectorMap: React.FC = () => {
                                     >
                                         {/* Planetary Background */}
                                         <div className="absolute inset-0 z-0 overflow-hidden">
-                                            <img src={`/planets/m${monthIndex + 1}.png`} alt="" className="w-full h-full object-cover opacity-20 group-hover:opacity-40 transition-opacity duration-500 scale-110 group-hover:scale-100" />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                                            <img src={`/planets/m${monthIndex + 1}.png`} alt="" className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-500 scale-110 group-hover:scale-100" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                                         </div>
 
                                         <div className="relative z-10 p-6 flex flex-col items-center justify-center py-6 gap-2 min-h-[160px]">
@@ -216,7 +216,7 @@ export const SectorMap: React.FC = () => {
                                                     <div className="flex flex-col items-center"><span className="font-mono text-zinc-600 text-xs">VS</span><span className={`font-bold ${garrisonPower >= scalingThreat ? 'text-green-500' : 'text-red-600 animate-pulse'}`}>{garrisonPower >= scalingThreat ? 'DEFENDED' : 'VULNERABLE'}</span></div>
                                                     <div className="text-center"><span className="block text-zinc-500 text-xs mb-1">駐軍戰力</span><span className={`text-2xl font-bold font-mono ${garrisonPower >= scalingThreat ? 'text-imperial-gold' : 'text-red-500'}`}>{garrisonPower}</span></div>
                                                 </div>
-                                                <div className="flex flex-col gap-4">
+                                                <div className="grid grid-cols-2 gap-3">
                                                     {[
                                                         { id: 'guardsmen', name: '帝國衛隊', type: 'guardsmen', img: '/units/guardsman.png', power: POWER_VALUES.guardsmen, count: garrison.guardsmen, reserve: armyStrength.reserves.guardsmen },
                                                         { id: 'spaceMarines', name: '星際戰士', type: 'space_marine', img: '/units/marine.png', power: POWER_VALUES.spaceMarines, count: garrison.spaceMarines, reserve: armyStrength.reserves.spaceMarines },
@@ -224,18 +224,30 @@ export const SectorMap: React.FC = () => {
                                                         { id: 'dreadnought', name: '無畏機甲', type: 'dreadnought', img: '/units/dreadnought.png', power: POWER_VALUES.dreadnought, count: garrison.dreadnought || 0, reserve: armyStrength.reserves.dreadnought },
                                                         { id: 'baneblade', name: '帝皇毒刃', type: 'baneblade', img: '/units/baneblade.png', power: POWER_VALUES.baneblade, count: garrison.baneblade || 0, reserve: armyStrength.reserves.baneblade },
                                                     ].map(unit => (
-                                                        <div key={unit.id} className="flex items-center gap-4 p-3 border border-zinc-800 rounded bg-black">
-                                                            <div className="w-16 h-16 flex-shrink-0 border border-zinc-700 rounded overflow-hidden"><img src={unit.img} alt="" className="w-full h-full object-cover" /></div>
-                                                            <div className="flex-1">
-                                                                <div className="flex justify-between mb-1"><span className="text-white font-bold">{unit.name}</span><span className="text-zinc-500 text-xs">威力: {unit.power}</span></div>
-                                                                <div className="flex items-center gap-4">
-                                                                    <div className="flex flex-col items-center"><span className="text-xs text-zinc-500">後備</span><span className="text-green-500 font-bold">{unit.reserve}</span></div>
-                                                                    <div className="flex-1 flex gap-2 justify-center">
-                                                                        <Button size="small" onClick={() => recallUnit(selectedMonth!, unit.type as any, 1)} disabled={unit.count <= 0}>&lt;</Button>
-                                                                        <div className="w-16 text-center text-white font-mono border-b border-zinc-700">{unit.count}</div>
-                                                                        <Button size="small" onClick={() => deployUnit(selectedMonth!, unit.type as any, 1)} disabled={unit.reserve <= 0}>&gt;</Button>
-                                                                    </div>
-                                                                    <div className="flex flex-col items-center"><span className="text-xs text-zinc-500">部署</span><span className="text-imperial-gold font-bold">{unit.count}</span></div>
+                                                        <div key={unit.id} className="flex flex-col gap-2 p-2 border border-zinc-800 rounded bg-black relative">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-12 h-12 flex-shrink-0 border border-zinc-700 rounded overflow-hidden">
+                                                                    <img src={unit.img} alt="" className="w-full h-full object-cover" />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="text-white font-bold text-xs truncate">{unit.name}</div>
+                                                                    <div className="text-zinc-500 text-[10px]">威力: {unit.power}</div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex items-center justify-between gap-1 bg-zinc-900/50 p-1 rounded">
+                                                                <div className="flex flex-col items-center flex-1">
+                                                                    <span className="text-[9px] text-zinc-500">預備</span>
+                                                                    <span className="text-green-500 font-bold text-xs">{unit.reserve}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-1">
+                                                                    <Button size="small" type="text" className="!bg-zinc-800 !text-zinc-400 !w-6 !h-6 !p-0" onClick={() => recallUnit(selectedMonth!, unit.type as any, 1)} disabled={unit.count <= 0}>&lt;</Button>
+                                                                    <div className="w-8 text-center text-white font-mono text-xs font-bold">{unit.count}</div>
+                                                                    <Button size="small" type="text" className="!bg-zinc-800 !text-zinc-400 !w-6 !h-6 !p-0" onClick={() => deployUnit(selectedMonth!, unit.type as any, 1)} disabled={unit.reserve <= 0}>&gt;</Button>
+                                                                </div>
+                                                                <div className="flex flex-col items-center flex-1">
+                                                                    <span className="text-[9px] text-zinc-500">部署</span>
+                                                                    <span className="text-imperial-gold font-bold text-xs">{unit.count}</span>
                                                                 </div>
                                                             </div>
                                                         </div>
