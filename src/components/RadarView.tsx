@@ -128,15 +128,15 @@ export const RadarView: React.FC<RadarViewProps> = ({ tasks, onSelectKey, select
                             )}
                         </motion.button>
 
-                        {/* Title Label - Always Visible for Tactical Awareness */}
+                        {/* Title Label - Positioned Above Center */}
                         <div
-                            className={`absolute left-4 top-0 pointer-events-none whitespace-nowrap font-mono text-[9px] tracking-tight transition-all duration-300 ${isSelected ? 'text-white opacity-100 scale-110' : 'text-imperial-gold opacity-90'}`}
+                            className={`absolute -top-1 left-0 -translate-x-1/2 -translate-y-full pointer-events-none whitespace-nowrap font-mono text-[10px] tracking-tight transition-all duration-300 ${isSelected ? 'text-white opacity-100 scale-110' : 'text-imperial-gold opacity-90'}`}
                             style={{
-                                textShadow: '1px 1px 3px black, -1px -1px 3px black',
-                                filter: isSelected ? 'drop-shadow(0 0- 5px white)' : 'none'
+                                textShadow: '1px 1px 3px black',
+                                filter: isSelected ? 'drop-shadow(0 0 5px white)' : 'none'
                             }}
                         >
-                            <span className="bg-black/80 px-1.5 py-0.5 rounded border border-imperial-gold/30 uppercase font-bold shadow-lg">
+                            <span className="bg-black/80 px-1.5 py-0.5 rounded border border-imperial-gold/40 uppercase font-bold shadow-2xl backdrop-blur-xs">
                                 {blip.title}
                             </span>
                         </div>
