@@ -296,18 +296,38 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
                                     </span>
                                 </div>
 
-                                <div className="flex gap-3">
-                                    <Button
-                                        size="middle"
-                                        className="!bg-green-600 !border-green-500 !text-white !h-10 !px-6 flex items-center gap-2 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onPurge(task.id);
-                                        }}
-                                    >
-                                        <Shield size={18} />
-                                        <span className="font-bold tracking-widest">淨化</span>
-                                    </Button>
+                                <div className="flex gap-2">
+                                    {onEdit && (
+                                        <Button
+                                            size="middle"
+                                            className="!bg-blue-900/20 !border-blue-500/50 !text-blue-500 !h-10 !w-10 flex items-center justify-center p-0"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onEdit(task);
+                                            }}
+                                        >
+                                            <FileEdit size={18} />
+                                        </Button>
+                                    )}
+
+                                    {task.isRecurring && task.lastCompletedAt &&
+                                        new Date(task.lastCompletedAt).toLocaleDateString() === new Date().toLocaleDateString() ? (
+                                        <Tag color="green" className="!bg-green-900/20 !border-green-500/50 !text-green-500 font-mono text-xs m-0 px-3 py-1 flex items-center animate-pulse">
+                                            COMPLETED
+                                        </Tag>
+                                    ) : (
+                                        <Button
+                                            size="middle"
+                                            className="!bg-green-600 !border-green-500 !text-white !h-10 !px-4 flex items-center gap-2 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onPurge(task.id);
+                                            }}
+                                        >
+                                            <Shield size={18} />
+                                            <span className="font-bold tracking-widest text-xs">淨化</span>
+                                        </Button>
+                                    )}
                                 </div>
                             </div>
                         </div>

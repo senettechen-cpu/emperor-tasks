@@ -190,7 +190,9 @@ const MainDashboard = () => {
 
               <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-imperial-gold/20 scrollbar-track-transparent">
                 <TaskDataSlate
-                  tasks={slateViewMode === 'mandates' ? allTasks : tasks}
+                  tasks={slateViewMode === 'mandates'
+                    ? allTasks.filter(t => t.isRecurring)
+                    : tasks}
                   selectedId={selectedTaskId}
                   onSelect={setSelectedTaskId}
                   onPurge={purgeTask}
