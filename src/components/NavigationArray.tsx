@@ -29,13 +29,13 @@ export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory }
     };
 
     return (
-        <div className="w-full h-[60px] bg-black border-t border-imperial-gold flex items-center justify-between px-8 z-50 relative">
+        <div className="w-full h-[60px] bg-black border-t border-imperial-gold flex items-center justify-between px-4 md:px-8 z-50 relative overflow-x-auto overflow-y-hidden scrollbar-hide">
             {/* Background Mesh */}
             <div className="absolute inset-0 opacity-10 pointer-events-none"
                 style={{ backgroundImage: 'radial-gradient(#fbbf24 1px, transparent 1px)', backgroundSize: '4px 4px' }}
             />
 
-            <div className="flex gap-4 h-full items-center">
+            <div className="flex gap-4 h-full items-center shrink-0">
                 {/* Tactical View Toggle */}
                 <button
                     onClick={() => setViewMode('tactical')}
@@ -92,7 +92,7 @@ export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory }
             {/* Armory Toggle */}
             <button
                 onClick={onOpenArmory}
-                className="h-10 px-6 flex items-center gap-2 font-mono tracking-widest text-xs border border-zinc-800 bg-black text-imperial-gold hover:bg-imperial-gold hover:text-black transition-all"
+                className="h-10 px-4 md:px-6 flex items-center gap-2 font-mono tracking-widest text-xs border border-zinc-800 bg-black text-imperial-gold hover:bg-imperial-gold hover:text-black transition-all shrink-0 ml-4"
             >
                 <ShoppingCart size={16} />
                 <span>軍械庫 [<span>{resources.rp}</span> RP]</span>

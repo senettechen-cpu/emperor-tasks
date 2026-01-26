@@ -170,7 +170,7 @@ const MainDashboard = () => {
         {viewMode === 'tactical' ? (
           <>
             {/* LEFT PANEL: Task Data & Input */}
-            <div className="w-1/2 h-full flex flex-col border-r border-imperial-gold/20 bg-black/40 relative z-20">
+            <div className="w-full md:w-1/2 h-full flex flex-col border-r border-imperial-gold/20 bg-black/40 relative z-20">
               <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-imperial-gold/20 scrollbar-track-transparent">
                 <TaskDataSlate
                   tasks={activeTasks}
@@ -202,8 +202,8 @@ const MainDashboard = () => {
               </div>
             </div>
 
-            {/* RIGHT PANEL: Radar & Visuals */}
-            <div className="w-1/2 h-full relative flex items-center justify-center bg-zinc-900/10">
+            {/* RIGHT PANEL: Radar & Visuals (Hidden on Mobile) */}
+            <div className="hidden md:flex md:w-1/2 h-full relative items-center justify-center bg-zinc-900/10">
               <OrbitalRadar
                 tasks={activeTasks}
                 selectedId={selectedTaskId}

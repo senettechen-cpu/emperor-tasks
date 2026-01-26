@@ -95,7 +95,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (gameState) {
                     if (gameState.resources) setResources(gameState.resources);
                     if (gameState.corruption !== undefined) setCorruption(gameState.corruption);
-                    if (gameState.ownedUnits) setOwnedUnits(gameState.ownedUnits);
+                    if (gameState.ownedUnits) setOwnedUnits(Array.isArray(gameState.ownedUnits) ? gameState.ownedUnits : []);
                     // Projects are loaded separately now
                     if (gameState.armyStrength) setArmyStrength(gameState.armyStrength);
                     if (gameState.currentMonth !== undefined) setCurrentMonth(gameState.currentMonth);
@@ -505,7 +505,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setTasks(importedTasks);
             setResources(data.resources);
             setCorruption(data.corruption || 0);
-            setOwnedUnits(data.ownedUnits || []);
+            setOwnedUnits(Array.isArray(data.ownedUnits) ? data.ownedUnits : []);
             setRadarTheme(data.radarTheme || 'green');
             setProjects(data.projects || []);
             setArmyStrength(data.armyStrength || { reserves: { guardsmen: 0, spaceMarines: 0, custodes: 0, dreadnought: 0, baneblade: 0 }, garrisons: {}, totalActivePower: 0 });
