@@ -230,19 +230,88 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
                 </div>
             </header>
 
-            <Table
-                dataSource={sortedTasks}
-                columns={columns}
-                rowKey="id"
-                pagination={false}
-                className="imperial-table"
-                onRow={(record) => ({
-                    onMouseEnter: () => onSelect(record.id),
-                    onMouseLeave: () => onSelect(null),
-                    onClick: () => onSelect(record.id === selectedId ? null : record.id),
+            {/* Desktop Table View */}
+            <div className="hidden md:block">
+                <Table
+                    dataSource={sortedTasks}
+                    columns={columns}
+                    rowKey="id"
+                    pagination={false}
+                    className="imperial-table"
+                    onRow={(record) => ({
+                        onMouseEnter: () => onSelect(record.id),
+                        onMouseLeave: () => onSelect(null),
+                        onClick: () => onSelect(record.id === selectedId ? null : record.id),
+                    })}
+                    rowClassName={(record) => `cursor-pointer transition-all duration-300 ${record.id === selectedId ? 'bg-green-500/10 border-l-2 border-green-500' : 'hover:bg-imperial-gold/5'}`}
+                />
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden flex flex-col gap-3 p-4 pb-20">
+                {sortedTasks.map(task => {
+                    const isOverdue = new Date(task.dueDate) < new Date();
+                    return (
+                        <div
+                            key={task.id}
+                            className={`p-4 border ${task.id === selectedId ? 'border-green-500 bg-green-900/10' : 'border-zinc-800 bg-zinc-900/40'} rounded-lg transition-all`}
+                            onClick={() => onSelect(task.id === selectedId ? null : task.id)}
+                        >
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="flex flex-col">
+                                    <span className={`font-mono text-lg font-bold ${task.id === selectedId ? 'text-green-400' : 'text-green-500'}`}>
+                                        {task.title}
+                                    </span>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <Tag className="!bg-transparent !border-zinc-700 !text-zinc-500 !m-0 text-[10px]">
+                                            #{task.id.slice(0, 4)}
+                                        </Tag>
+                                        {task.isRecurring && (
+                                            <Tag className="!bg-cyan-900/20 !border-cyan-500/30 !text-cyan-400 !m-0 text-[10px]">
+                                                法令
+                                            </Tag>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end gap-1">
+                                    {FACTION_ICONS[task.faction]}
+                                    <div className="flex gap-0.5">
+                                        {[...Array(5)].map((_, i) => (
+                                            <div
+                                                key={i}
+                                                className={`w-1.5 h-2 border border-imperial-gold/20 ${i < task.difficulty ? 'bg-red-600/60' : 'bg-transparent'}`}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-end mt-4">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] text-zinc-500 font-mono">DEADLINE</span>
+                                    <span className={`font-mono text-sm ${isOverdue ? 'text-red-500 animate-pulse font-bold' : 'text-imperial-gold/80'}`}>
+                                        {new Date(task.dueDate).toLocaleString()}
+                                    </span>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <Button
+                                        size="middle"
+                                        className="!bg-green-600 !border-green-500 !text-white !h-10 !px-6 flex items-center gap-2 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onPurge(task.id);
+                                        }}
+                                    >
+                                        <Shield size={18} />
+                                        <span className="font-bold tracking-widest">淨化</span>
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    );
                 })}
-                rowClassName={(record) => `cursor-pointer transition-all duration-300 ${record.id === selectedId ? 'bg-green-500/10 border-l-2 border-green-500' : 'hover:bg-imperial-gold/5'}`}
-            />
+            </div>
 
             <style>{`
                 .imperial-table .ant-table {

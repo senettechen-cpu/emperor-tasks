@@ -116,34 +116,47 @@ const MainDashboard = () => {
     <div className={`h-screen bg-black relative flex flex-col items-center overflow-hidden transition-all duration-300 ${corruption > 50 ? 'glitch-container' : ''}`}>
       <div className="scanline" />
 
-      <header className="w-full flex justify-between items-center p-6 border-b border-imperial-gold/20 z-10 bg-black/80 backdrop-blur-sm">
-        <div className="flex flex-col">
-          <span className="text-imperial-gold font-mono tracking-[0.2em] text-xs opacity-60">帝國曆 (TERRA STANDARD)</span>
-          <span className="text-imperial-gold font-bold text-xl tracking-widest font-mono shadow-[0_0_10px_rgba(251,191,36,0.3)]">
-            {formatDate(currentTime)}
-          </span>
+      <header className="w-full flex flex-col md:flex-row justify-between items-center p-4 md:p-6 border-b border-imperial-gold/20 z-10 bg-black/80 backdrop-blur-sm gap-4 md:gap-0">
+
+        {/* TopRow for Mobile: Time & Resources */}
+        <div className="w-full flex justify-between items-start md:w-auto md:flex-col md:items-start">
+          <div className="flex flex-col">
+            <span className="text-imperial-gold font-mono tracking-[0.2em] text-[10px] md:text-xs opacity-60">帝國曆</span>
+            <span className="text-imperial-gold font-bold text-lg md:text-xl tracking-widest font-mono shadow-[0_0_10px_rgba(251,191,36,0.3)]">
+              {formatDate(currentTime).split(' ')[0]} <span className="text-xs md:text-lg">{formatDate(currentTime).split(' ')[1]}</span>
+            </span>
+          </div>
+
+          {/* Mobile Resource View (Hidden on Desktop) */}
+          <div className="flex flex-col items-end md:hidden" onClick={() => setIsShopOpen(true)}>
+            <div className="flex items-center gap-2">
+              <span className="text-imperial-gold device-font text-xl">{resources.rp} RP</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-white device-font text-sm">{resources.glory} GLORY</span>
+            </div>
+          </div>
         </div>
 
+        {/* Corruption Bar (Full width on mobile) */}
         <div
-          className="flex flex-col items-center cursor-pointer group"
+          className="flex flex-col items-center cursor-pointer group w-full md:w-auto"
           onClick={cleanseCorruption}
           title={resources.rp >= 20 ? "啟動淨化協議 (-20 RP / -30 腐壞)" : "資源不足"}
         >
-          <h4 className={`!m-0 !tracking-[0.5em] transition-colors duration-300 text-xl font-bold ${corruption > 50 ? '!text-red-500 animate-pulse' : '!text-mechanicus-red'}`}>
-            <span>{corruption > 50 ? '!! 亞空間裂隙開啟 !!' : '目前腐壞程度'}</span>
+          <h4 className={`!m-0 !tracking-[0.5em] transition-colors duration-300 text-sm md:text-xl font-bold ${corruption > 50 ? '!text-red-500 animate-pulse' : '!text-mechanicus-red'}`}>
+            <span>{corruption > 50 ? '!! 亞空間裂隙 !!' : '目前腐壞程度'}</span>
           </h4>
-          <div className="w-64 h-2 bg-zinc-900 border border-mechanicus-red/30 mt-2 relative overflow-hidden">
+          <div className="w-full md:w-64 h-2 bg-zinc-900 border border-mechanicus-red/30 mt-2 relative overflow-hidden">
             <div
               className={`h-full transition-all duration-1000 ${corruption > 80 ? 'bg-red-600' : 'bg-mechanicus-red'}`}
               style={{ width: `${corruption}%` }}
             />
           </div>
-          <span className="text-[10px] text-red-500/50 mt-1 opacity-0 group-hover:opacity-100 transition-opacity font-mono">
-            [ 點擊淨化 : 20 RP ]
-          </span>
         </div>
 
-        <div className="flex gap-8 items-center cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setIsShopOpen(true)}>
+        {/* Desktop Resource View (Hidden on Mobile) */}
+        <div className="hidden md:flex gap-8 items-center cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setIsShopOpen(true)}>
           <div className="text-right relative">
             <span className="block text-imperial-gold/50 text-xs tracking-wider">帝皇之怒 (RP)</span>
             <div className="flex items-center justify-end gap-2">
