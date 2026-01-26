@@ -104,10 +104,6 @@ export const SectorMap: React.FC = () => {
         <div className="w-full h-full flex flex-col p-6 bg-zinc-950 text-imperial-gold overflow-hidden">
             {/* THREAT MONITOR */}
             <div className="w-full mb-8 border border-red-900/50 bg-red-950/10 p-4 rounded-lg relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-2 opacity-50">
-                    <div className="text-red-600 text-4xl animate-pulse">⚠️</div>
-                </div>
-
                 <div className="flex justify-between items-end mb-2">
                     <div className="flex flex-col">
                         <h4 className="!text-red-500 !font-mono !m-0 tracking-widest uppercase text-lg font-bold">
@@ -161,81 +157,55 @@ export const SectorMap: React.FC = () => {
                     {/* Legion Visualization (Garrison) - Commercial Style */}
                     <div className="mt-8 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                         {/* Reserves Display (Previously Garrison) */}
-                        {armyStrength.reserves.guardsmen > 0 && (
-                            <div className="relative group overflow-hidden border border-imperial-gold/30 bg-black/60 transition-all duration-300 hover:border-imperial-gold hover:shadow-[0_0_20px_rgba(251,191,36,0.3)]">
-                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
-                                <img src="/units/guardsman.png" alt="Guardsman" className="w-full h-32 object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500 scale-110 group-hover:scale-100" />
-                                <div className="absolute bottom-0 left-0 w-full p-3 z-20 flex justify-between items-end border-t border-imperial-gold/10 bg-black/80 backdrop-blur-sm">
-                                    <div>
-                                        <h5 className="!text-imperial-gold !m-0 font-bold text-sm tracking-widest uppercase">ASTRA MILITARUM</h5>
-                                        <span className="text-zinc-400 text-xs font-mono">後備部隊 (RESERVES)</span>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="block text-2xl font-mono font-bold text-white leading-none"><span>{armyStrength.reserves.guardsmen}</span></span>
-                                    </div>
-                                </div>
+                        <div className="relative group overflow-hidden border border-imperial-gold/30 bg-black/60 transition-all duration-300 hover:border-imperial-gold hover:shadow-[0_0_20px_rgba(251,191,36,0.3)] h-24 flex items-center">
+                            <div className="h-full aspect-square border-4 border-double border-imperial-gold flex-shrink-0 p-0.5">
+                                <img src="/units/guardsman.png" alt="Guardsman" className="w-full h-full object-cover" />
                             </div>
-                        )}
-                        {armyStrength.reserves.spaceMarines > 0 && (
-                            <div className="relative group overflow-hidden border border-blue-500/30 bg-black/60 transition-all duration-300 hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]">
-                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
-                                <img src="/units/marine.png" alt="Space Marine" className="w-full h-32 object-cover opacity-70 group-hover:opacity-100 transition-opacity duration-500 scale-110 group-hover:scale-100" />
-                                <div className="absolute bottom-0 left-0 w-full p-3 z-20 flex justify-between items-end border-t border-blue-500/10 bg-black/80 backdrop-blur-sm">
-                                    <div>
-                                        <h5 className="!text-blue-400 !m-0 font-bold text-sm tracking-widest uppercase">ADEPTUS ASTARTES</h5>
-                                        <span className="text-zinc-400 text-xs font-mono">後備部隊 (RESERVES)</span>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="block text-2xl font-mono font-bold text-white leading-none"><span>{armyStrength.reserves.spaceMarines}</span></span>
-                                    </div>
-                                </div>
+                            <div className="flex-1 px-2 py-0 flex flex-col justify-center items-center bg-gradient-to-r from-black/80 to-transparent h-full gap-1">
+                                <h5 className="!text-imperial-gold !m-0 font-bold text-xl tracking-widest leading-none text-center">星界軍</h5>
+                                <span className="block text-4xl font-mono font-bold text-white leading-none text-center"><span>{armyStrength.reserves.guardsmen}</span></span>
                             </div>
-                        )}
-                        {armyStrength.reserves.custodes > 0 && (
-                            <div className="relative group overflow-hidden border border-yellow-500/30 bg-black/60 transition-all duration-300 hover:border-yellow-500 hover:shadow-[0_0_30px_rgba(234,179,8,0.4)]">
-                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
-                                <img src="/units/custodes.png" alt="Custodes" className="w-full h-32 object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500 scale-110 group-hover:scale-100" />
-                                <div className="absolute bottom-0 left-0 w-full p-3 z-20 flex justify-between items-end border-t border-yellow-500/10 bg-black/80 backdrop-blur-sm">
-                                    <div>
-                                        <h5 className="!text-yellow-400 !m-0 font-bold text-sm tracking-widest uppercase">ADEPTUS CUSTODES</h5>
-                                        <span className="text-zinc-400 text-xs font-mono">後備部隊 (RESERVES)</span>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="block text-2xl font-mono font-bold text-white leading-none"><span>{armyStrength.reserves.custodes}</span></span>
-                                    </div>
-                                </div>
+                        </div>
+
+                        <div className="relative group overflow-hidden border border-blue-500/30 bg-black/60 transition-all duration-300 hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] h-24 flex items-center">
+                            <div className="h-full aspect-square border-4 border-double border-blue-500 flex-shrink-0 p-0.5">
+                                <img src="/units/marine.png" alt="Space Marine" className="w-full h-full object-cover" />
                             </div>
-                        )}
-                        {armyStrength.reserves.dreadnought > 0 && (
-                            <div className="relative group overflow-hidden border border-zinc-500/30 bg-black/60 transition-all duration-300 hover:border-zinc-500 hover:shadow-[0_0_30px_rgba(255,255,255,0.2)]">
-                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
-                                <img src="/units/dreadnought.png" alt="Dreadnought" className="w-full h-32 object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500 scale-110 group-hover:scale-100" />
-                                <div className="absolute bottom-0 left-0 w-full p-3 z-20 flex justify-between items-end border-t border-zinc-500/10 bg-black/80 backdrop-blur-sm">
-                                    <div>
-                                        <h5 className="!text-zinc-300 !m-0 font-bold text-sm tracking-widest uppercase">DREADNOUGHT</h5>
-                                        <span className="text-zinc-400 text-xs font-mono">後備部隊 (RESERVES)</span>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="block text-2xl font-mono font-bold text-white leading-none"><span>{armyStrength.reserves.dreadnought}</span></span>
-                                    </div>
-                                </div>
+                            <div className="flex-1 px-2 py-0 flex flex-col justify-center items-center bg-gradient-to-r from-black/80 to-transparent h-full gap-1">
+                                <h5 className="!text-blue-400 !m-0 font-bold text-xl tracking-widest leading-none text-center">星際戰士</h5>
+                                <span className="block text-4xl font-mono font-bold text-white leading-none text-center"><span>{armyStrength.reserves.spaceMarines}</span></span>
                             </div>
-                        )}
-                        {armyStrength.reserves.baneblade > 0 && (
-                            <div className="relative group overflow-hidden border border-red-500/30 bg-black/60 transition-all duration-300 hover:border-red-500 hover:shadow-[0_0_30px_rgba(239,68,68,0.4)]">
-                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
-                                <img src="/units/baneblade.png" alt="Baneblade" className="w-full h-32 object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500 scale-110 group-hover:scale-100" />
-                                <div className="absolute bottom-0 left-0 w-full p-3 z-20 flex justify-between items-end border-t border-red-500/10 bg-black/80 backdrop-blur-sm">
-                                    <div>
-                                        <h5 className="!text-red-400 !m-0 font-bold text-sm tracking-widest uppercase">BANEBLADE</h5>
-                                        <span className="text-zinc-400 text-xs font-mono">後備部隊 (RESERVES)</span>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="block text-2xl font-mono font-bold text-white leading-none"><span>{armyStrength.reserves.baneblade}</span></span>
-                                    </div>
-                                </div>
+                        </div>
+
+                        <div className="relative group overflow-hidden border border-yellow-500/30 bg-black/60 transition-all duration-300 hover:border-yellow-500 hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] h-24 flex items-center">
+                            <div className="h-full aspect-square border-4 border-double border-yellow-500 flex-shrink-0 p-0.5">
+                                <img src="/units/custodes.png" alt="Custodes" className="w-full h-full object-cover" />
                             </div>
-                        )}
+                            <div className="flex-1 px-2 py-0 flex flex-col justify-center items-center bg-gradient-to-r from-black/80 to-transparent h-full gap-1">
+                                <h5 className="!text-yellow-400 !m-0 font-bold text-xl tracking-widest leading-none text-center">禁軍</h5>
+                                <span className="block text-4xl font-mono font-bold text-white leading-none text-center"><span>{armyStrength.reserves.custodes}</span></span>
+                            </div>
+                        </div>
+
+                        <div className="relative group overflow-hidden border border-zinc-500/30 bg-black/60 transition-all duration-300 hover:border-zinc-500 hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] h-24 flex items-center">
+                            <div className="h-full aspect-square border-4 border-double border-zinc-500 flex-shrink-0 p-0.5">
+                                <img src="/units/dreadnought.png" alt="Dreadnought" className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex-1 px-2 py-0 flex flex-col justify-center items-center bg-gradient-to-r from-black/80 to-transparent h-full gap-1">
+                                <h5 className="!text-zinc-300 !m-0 font-bold text-xl tracking-widest leading-none text-center">無畏機甲</h5>
+                                <span className="block text-4xl font-mono font-bold text-white leading-none text-center"><span>{armyStrength.reserves.dreadnought}</span></span>
+                            </div>
+                        </div>
+
+                        <div className="relative group overflow-hidden border border-red-500/30 bg-black/60 transition-all duration-300 hover:border-red-500 hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] h-24 flex items-center">
+                            <div className="h-full aspect-square border-4 border-double border-red-500 flex-shrink-0 p-0.5">
+                                <img src="/units/baneblade.png" alt="Baneblade" className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex-1 px-2 py-0 flex flex-col justify-center items-center bg-gradient-to-r from-black/80 to-transparent h-full gap-1">
+                                <h5 className="!text-red-400 !m-0 font-bold text-xl tracking-widest leading-none text-center">帝皇毒刃</h5>
+                                <span className="block text-4xl font-mono font-bold text-white leading-none text-center"><span>{armyStrength.reserves.baneblade}</span></span>
+                            </div>
+                        </div>
                         {armyStrength.totalActivePower === 0 && (
                             <div className="col-span-3 text-center py-8 border border-zinc-900 border-dashed rounded bg-zinc-900/50">
                                 <span className="text-zinc-600 font-mono text-sm block mb-2">GARRISON EMPTY</span>
@@ -353,7 +323,7 @@ export const SectorMap: React.FC = () => {
                 <div className="absolute inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
                     <div className="w-full max-w-2xl bg-zinc-950 border border-imperial-gold rounded-lg shadow-[0_0_50px_rgba(251,191,36,0.1)] flex flex-col max-h-[90vh] overflow-hidden">
                         {/* Header */}
-                        <div className="flex justify-between items-center p-0 border-b border-zinc-800 bg-zinc-900/50">
+                        <div className="flex justify-between items-center p-0 border-b border-zinc-800 bg-zinc-900/50 relative">
                             <div className="flex items-center">
                                 <button
                                     className={`px-6 py-4 font-mono font-bold transition-all ${activeTab === 'projects' ? 'text-black bg-imperial-gold' : 'text-zinc-500 hover:text-white'}`}
@@ -369,13 +339,13 @@ export const SectorMap: React.FC = () => {
                                 </button>
                             </div>
 
-                            <div className="px-4 text-imperial-gold font-mono tracking-widest text-lg">
+                            <div className="px-4 text-imperial-gold font-mono tracking-widest text-lg pr-12">
                                 {/* Current Location Display */}
                                 <span>星區: <span>{selectedMonth}</span></span>
                             </div>
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="text-zinc-500 hover:text-white font-mono text-xl"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white font-mono text-xl p-2 hover:bg-zinc-800 rounded transition-colors"
                             >
                                 X
                             </button>
@@ -416,8 +386,8 @@ export const SectorMap: React.FC = () => {
                                                 <div className="flex flex-col gap-4">
                                                     {/* Guardsmen Deployment */}
                                                     <div className="flex items-center gap-4 p-3 border border-zinc-800 rounded bg-black">
-                                                        <div className="w-12 h-12 flex items-center justify-center border border-zinc-700 rounded bg-zinc-900">
-                                                            <Shield size={20} className="text-green-600" />
+                                                        <div className="w-16 h-16 flex-shrink-0 border border-zinc-700 rounded overflow-hidden">
+                                                            <img src="/units/guardsman.png" alt="Guardsman" className="w-full h-full object-cover" />
                                                         </div>
                                                         <div className="flex-1">
                                                             <div className="flex justify-between mb-1">
@@ -444,8 +414,8 @@ export const SectorMap: React.FC = () => {
 
                                                     {/* Space Marine Deployment */}
                                                     <div className="flex items-center gap-4 p-3 border border-zinc-800 rounded bg-black">
-                                                        <div className="w-12 h-12 flex items-center justify-center border border-zinc-700 rounded bg-zinc-900">
-                                                            <Settings size={20} className="text-blue-500" />
+                                                        <div className="w-16 h-16 flex-shrink-0 border border-imperial-gold rounded overflow-hidden">
+                                                            <img src="/units/marine.png" alt="Space Marine" className="w-full h-full object-cover" />
                                                         </div>
                                                         <div className="flex-1">
                                                             <div className="flex justify-between mb-1">
@@ -472,8 +442,8 @@ export const SectorMap: React.FC = () => {
 
                                                     {/* Custodes Deployment */}
                                                     <div className="flex items-center gap-4 p-3 border border-zinc-800 rounded bg-black">
-                                                        <div className="w-12 h-12 flex items-center justify-center border border-zinc-700 rounded bg-zinc-900">
-                                                            <Skull size={20} className="text-yellow-500" />
+                                                        <div className="w-16 h-16 flex-shrink-0 border border-yellow-400 rounded overflow-hidden shadow-[0_0_10px_rgba(250,204,21,0.3)]">
+                                                            <img src="/units/custodes.png" alt="Custodes" className="w-full h-full object-cover" />
                                                         </div>
                                                         <div className="flex-1">
                                                             <div className="flex justify-between mb-1">
@@ -500,8 +470,8 @@ export const SectorMap: React.FC = () => {
 
                                                     {/* Dreadnought Deployment */}
                                                     <div className="flex items-center gap-4 p-3 border border-zinc-800 rounded bg-black">
-                                                        <div className="w-12 h-12 flex items-center justify-center border border-zinc-700 rounded bg-zinc-900">
-                                                            <Swords size={20} className="text-zinc-400" />
+                                                        <div className="w-16 h-16 flex-shrink-0 border border-zinc-500 rounded overflow-hidden">
+                                                            <img src="/units/dreadnought.png" alt="Dreadnought" className="w-full h-full object-cover" />
                                                         </div>
                                                         <div className="flex-1">
                                                             <div className="flex justify-between mb-1">
@@ -528,8 +498,8 @@ export const SectorMap: React.FC = () => {
 
                                                     {/* Baneblade Deployment */}
                                                     <div className="flex items-center gap-4 p-3 border border-zinc-800 rounded bg-black">
-                                                        <div className="w-12 h-12 flex items-center justify-center border border-zinc-700 rounded bg-zinc-900">
-                                                            <ShieldAlert size={20} className="text-red-500" />
+                                                        <div className="w-16 h-16 flex-shrink-0 border border-red-500 rounded overflow-hidden">
+                                                            <img src="/units/baneblade.png" alt="Baneblade" className="w-full h-full object-cover" />
                                                         </div>
                                                         <div className="flex-1">
                                                             <div className="flex justify-between mb-1">

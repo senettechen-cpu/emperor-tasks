@@ -15,11 +15,11 @@ interface Unit {
 }
 
 const UNITS: Unit[] = [
-    { id: 'tactical', name: '戰術小隊', cost: 10, description: '基礎防衛單位。獲得 RP +5%', icon: <GuardsmanIcon size={20} /> },
-    { id: 'dreadnought', name: '無畏機甲', cost: 50, description: '每天可復活一個過期任務。', icon: <MarineIcon size={20} /> },
-    { id: 'librarian', name: '智庫館長', cost: 100, description: '降低「心智類」任務腦力消耗。', icon: <SkullIcon size={20} /> },
-    { id: 'barge', name: '戰鬥駁船', cost: 500, description: '解鎖技能「軌道轟炸」。', icon: <Shield size={20} /> },
-    { id: 'baneblade', name: '帝皇毒刃', cost: 1000, description: '年度目標達成紀念。', icon: <CustodesIcon size={20} /> },
+    { id: 'tactical', name: '戰術小隊', cost: 10, description: '基礎防衛單位。獲得 RP +5%', icon: <img src="/units/guardsman.png" alt="Guardsman" className="w-full h-full object-cover" /> },
+    { id: 'dreadnought', name: '無畏機甲', cost: 50, description: '每天可復活一個過期任務。', icon: <img src="/units/dreadnought.png" alt="Dreadnought" className="w-full h-full object-cover" /> },
+    { id: 'librarian', name: '智庫館長', cost: 100, description: '降低「心智類」任務腦力消耗。', icon: <img src="/units/marine.png" alt="Librarian" className="w-full h-full object-cover" /> },
+    { id: 'barge', name: '戰鬥駁船', cost: 500, description: '解鎖技能「軌道轟炸」。', icon: <img src="/units/baneblade.png" alt="Barge" className="w-full h-full object-cover" /> },
+    { id: 'baneblade', name: '帝皇毒刃', cost: 1000, description: '年度目標達成紀念。', icon: <img src="/units/baneblade.png" alt="Baneblade" className="w-full h-full object-cover" /> },
 ];
 
 interface UnitShopProps {

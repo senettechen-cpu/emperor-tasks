@@ -30,6 +30,36 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
     tasks, selectedId, onSelect, onPurge, onOpenAddModal,
     onEdit, viewMode = 'active', onToggleView
 }) => {
+    const [showTodayOnly, setShowTodayOnly] = React.useState(false);
+
+    const sortedTasks = useMemo(() => {
+        let filtered = [...tasks];
+
+        if (showTodayOnly) {
+            const todayStr = new Date().toLocaleDateString();
+            filtered = filtered.filter(t => {
+                const isDueToday = new Date(t.dueDate).toLocaleDateString() === todayStr;
+                const isOverdue = new Date(t.dueDate) < new Date();
+                return isDueToday || isOverdue; // Show today AND overdue
+            });
+        }
+
+        return filtered.sort((a, b) => {
+            const now = new Date().getTime();
+            const timeA = new Date(a.dueDate).getTime();
+            const timeB = new Date(b.dueDate).getTime();
+            const isOverdueA = timeA < now;
+            const isOverdueB = timeB < now;
+
+            // 1. Overdue first
+            if (isOverdueA && !isOverdueB) return -1;
+            if (!isOverdueA && isOverdueB) return 1;
+
+            // 2. Date Ascending (Soonest first)
+            return timeA - timeB;
+        });
+    }, [tasks, showTodayOnly]);
+
     const columns = useMemo(() => [
         {
             title: '辨識碼',
@@ -106,21 +136,21 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
             width: 140,
             render: (_: any, record: Task) => (
                 <div className="flex gap-2">
-                    {/* Stable container used to prevent removeChild errors from browser extensions */}
-                    <span style={{ display: (viewMode === 'mandates' && onEdit) ? 'inline-block' : 'none' }}>
+                    {/* Edit Button - Always visible if handler provided */}
+                    {onEdit && (
                         <Tooltip title="修改參數">
                             <Button
                                 size="small"
                                 className="!bg-blue-900/20 !border-blue-500/50 hover:!bg-blue-500 hover:!text-black !text-blue-500 !p-1 h-7 w-7 flex items-center justify-center transition-all"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    if (onEdit) onEdit(record);
+                                    onEdit(record);
                                 }}
                             >
                                 <FileEdit size={14} />
                             </Button>
                         </Tooltip>
-                    </span>
+                    )}
 
                     <Tooltip title="執行淨化">
                         <Button
@@ -173,11 +203,19 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
                             MANDATE PROTOCOLS
                         </div>
                     </div>
+                    {/* Today Filter Toggle */}
+                    <div
+                        className={`cursor-pointer px-2 py-1 text-[10px] font-mono tracking-[0.1em] border transition-all ${showTodayOnly ? 'border-green-500 text-green-500 bg-green-900/10' : 'border-imperial-gold/20 text-imperial-gold/40 hover:border-imperial-gold/50'}`}
+                        onClick={() => setShowTodayOnly(!showTodayOnly)}
+                    >
+                        [ {showTodayOnly ? 'TODAY ONLY' : 'SHOW ALL'} ]
+                    </div>
+
                     {onOpenAddModal && (
                         <Button
                             size="small"
                             icon={<Plus size={14} />}
-                            className="!bg-imperial-gold/10 !border-imperial-gold/30 !text-imperial-gold hover:!bg-imperial-gold hover:!text-black flex items-center justify-center h-6 text-[10px] font-mono"
+                            className="!bg-imperial-gold/10 !border-imperial-gold/30 !text-imperial-gold hover:!bg-imperial-gold hover:!text-black flex items-center justify-center h-6 text-[10px] font-mono ml-2"
                             onClick={onOpenAddModal}
                         >
                             NEW DEPLOYMENT
@@ -193,7 +231,7 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
             </header>
 
             <Table
-                dataSource={tasks}
+                dataSource={sortedTasks}
                 columns={columns}
                 rowKey="id"
                 pagination={false}
@@ -215,13 +253,14 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
                     background: rgba(251, 191, 36, 0.05) !important;
                     color: rgba(251, 191, 36, 0.5) !important;
                     text-transform: uppercase;
-                    font-size: 10px;
+                    font-size: 14px; /* Increased from 10px */
                     letter-spacing: 0.1em;
                     border-bottom: 1px solid rgba(251, 191, 36, 0.1) !important;
                     font-family: monospace;
                 }
                 .imperial-table .ant-table-tbody > tr > td {
                     border-bottom: 1px solid rgba(251, 191, 36, 0.05) !important;
+                    font-size: 16px; /* Increased base font size */
                 }
                 .imperial-table .ant-table-tbody > tr:hover > td {
                     background: transparent !important;

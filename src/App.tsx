@@ -93,14 +93,35 @@ const MainDashboard = () => {
     );
   }
 
+  // Clock State
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatDate = (date: Date) => {
+    // Format: YYYY/MM/DD HH:mm:ss
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+  };
+
   return (
     <div className={`h-screen bg-black relative flex flex-col items-center overflow-hidden transition-all duration-300 ${corruption > 50 ? 'glitch-container' : ''}`}>
       <div className="scanline" />
 
       <header className="w-full flex justify-between items-center p-6 border-b border-imperial-gold/20 z-10 bg-black/80 backdrop-blur-sm">
         <div className="flex flex-col">
-          <span className="text-imperial-gold font-mono tracking-[0.2em] text-xs opacity-60">帝國曆</span>
-          <span className="text-imperial-gold font-bold text-xl tracking-widest font-mono">0 126 024.M3</span>
+          <span className="text-imperial-gold font-mono tracking-[0.2em] text-xs opacity-60">帝國曆 (TERRA STANDARD)</span>
+          <span className="text-imperial-gold font-bold text-xl tracking-widest font-mono shadow-[0_0_10px_rgba(251,191,36,0.3)]">
+            {formatDate(currentTime)}
+          </span>
         </div>
 
         <div

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Modal, Input, Slider, DatePicker, Select, Button, Typography, Checkbox } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Modal, Input, Slider, DatePicker, Select, Button, Typography, Checkbox, Radio } from 'antd';
 import { Task, Faction } from '../types';
+import { useGame } from '../contexts/GameContext';
 import dayjs from 'dayjs';
 
 const { Title } = Typography;
@@ -15,6 +16,13 @@ interface AddTaskModalProps {
 }
 
 export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, onAdd, initialKeyword = '', initialTask }) => {
+    const { projects } = useGame();
+
+    // Modes: 'manual' | 'project'
+    const [inputMode, setInputMode] = useState<'manual' | 'project'>('manual');
+    const [selectedProjectId, setSelectedProjectId] = useState<string>();
+    const [selectedSubTaskId, setSelectedSubTaskId] = useState<string>();
+
     const [title, setTitle] = useState(initialKeyword);
     const [difficulty, setDifficulty] = useState(1);
     const [faction, setFaction] = useState<Faction>('orks');
@@ -23,7 +31,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
     const [dueDate, setDueDate] = useState<dayjs.Dayjs>(dayjs().add(12, 'hour'));
 
     // Effect to handle edit mode vs new mode
-    React.useEffect(() => {
+    useEffect(() => {
         if (visible) {
             if (initialTask) {
                 // Edit Mode
@@ -33,6 +41,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
                 setIsRecurring(initialTask.isRecurring || false);
                 // @ts-ignore
                 setDueDate(dayjs(initialTask.dueDate));
+                setInputMode('manual'); // Force manual on edit
             } else {
                 // New Mode
                 setTitle(initialKeyword);
@@ -41,12 +50,15 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
                 setIsRecurring(false);
                 // @ts-ignore
                 setDueDate(dayjs().add(12, 'hour'));
+                setInputMode('manual');
+                setSelectedProjectId(undefined);
+                setSelectedSubTaskId(undefined);
             }
         }
     }, [visible, initialTask, initialKeyword]);
 
     // Auto-detect faction based on title (only for new tasks)
-    React.useEffect(() => {
+    useEffect(() => {
         if (!initialTask && /[打掃家務洗]/.test(title)) setFaction('nurgle');
         else if (!initialTask && /[學習程式代碼]/.test(title)) setFaction('tzeentch');
         else if (!initialTask && /[健身運動困難]/.test(title)) setFaction('khorne');
@@ -60,6 +72,20 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
         setTitle('');
         setIsRecurring(false);
         onClose();
+    };
+
+    const handleProjectChange = (projectId: string) => {
+        setSelectedProjectId(projectId);
+        setSelectedSubTaskId(undefined);
+    };
+
+    const handleSubTaskChange = (subTaskId: string) => {
+        setSelectedSubTaskId(subTaskId);
+        const project = projects.find(p => p.id === selectedProjectId);
+        const subTask = project?.subTasks.find(st => st.id === subTaskId);
+        if (subTask) {
+            setTitle(subTask.title);
+        }
     };
 
     return (
@@ -76,6 +102,61 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
             }}
         >
             <div className="space-y-6 pt-4">
+                {/* Mode Toggle */}
+                {!initialTask && (
+                    <div className="flex justify-center mb-4">
+                        <Radio.Group
+                            value={inputMode}
+                            onChange={e => setInputMode(e.target.value)}
+                            className="bg-zinc-900 border border-imperial-gold/30 rounded-lg p-1"
+                        >
+                            <Radio.Button value="manual" className="!bg-transparent !border-none !text-imperial-gold hover:!text-white after:!hidden checked:!bg-imperial-gold/20">
+                                手動輸入
+                            </Radio.Button>
+                            <Radio.Button value="project" className="!bg-transparent !border-none !text-imperial-gold hover:!text-white after:!hidden checked:!bg-imperial-gold/20">
+                                從專案導入
+                            </Radio.Button>
+                        </Radio.Group>
+                    </div>
+                )}
+
+                {/* Project Selection Mode */}
+                {inputMode === 'project' && !initialTask && (
+                    <div className="p-4 border border-imperial-gold/20 rounded bg-zinc-900/50 space-y-4 mb-4">
+                        <div>
+                            <label className="text-imperial-gold/70 font-mono block mb-2 text-xs">來源專案 (SOURCE PROJECT)</label>
+                            <Select
+                                className="w-full"
+                                placeholder="選擇戰略專案..."
+                                value={selectedProjectId}
+                                onChange={handleProjectChange}
+                                dropdownStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+                            >
+                                {projects.map(p => (
+                                    <Option key={p.id} value={p.id}>{p.month} - {p.title}</Option>
+                                ))}
+                            </Select>
+                        </div>
+                        <div>
+                            <label className="text-imperial-gold/70 font-mono block mb-2 text-xs">子任務目標 (SUB-OBJECTIVE)</label>
+                            <Select
+                                className="w-full"
+                                placeholder="選擇子任務..."
+                                value={selectedSubTaskId}
+                                onChange={handleSubTaskChange}
+                                disabled={!selectedProjectId}
+                                dropdownStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+                            >
+                                {projects.find(p => p.id === selectedProjectId)?.subTasks.map(st => (
+                                    <Option key={st.id} value={st.id}>
+                                        {st.completed ? '[已完成] ' : ''}{st.title}
+                                    </Option>
+                                ))}
+                            </Select>
+                        </div>
+                    </div>
+                )}
+
                 <div>
                     <label className="text-imperial-gold/70 font-mono block mb-2">任務代號 (OBJECTIVE)</label>
                     <Input

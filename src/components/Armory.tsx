@@ -48,7 +48,7 @@ const RECRUITMENT_UNITS = [
         cost: 100,
         power: 50,
         desc: '數量就是力量。',
-        icon: <Users size={32} className="text-zinc-400" />
+        icon: <img src="/units/guardsman.png" alt="Guardsman" className="w-16 h-16 object-cover border border-zinc-700 rounded" />
     },
     {
         id: 'space_marine',
@@ -56,7 +56,7 @@ const RECRUITMENT_UNITS = [
         cost: 500,
         power: 300,
         desc: '帝皇的死亡天使。',
-        icon: <Sword size={32} className="text-imperial-gold" />
+        icon: <img src="/units/marine.png" alt="Space Marine" className="w-16 h-16 object-cover border border-imperial-gold rounded" />
     },
     {
         id: 'custodes',
@@ -64,7 +64,7 @@ const RECRUITMENT_UNITS = [
         cost: 2000,
         power: 1500,
         desc: '萬中選一的守護者。',
-        icon: <ShieldCheck size={32} className="text-yellow-200 shadow-glow" />
+        icon: <img src="/units/custodes.png" alt="Custodes" className="w-16 h-16 object-cover border border-yellow-400 rounded shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
     }
 ] as const;
 
