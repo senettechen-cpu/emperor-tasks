@@ -25,6 +25,14 @@ const MainDashboard = () => {
     addTask, updateTask, purgeTask, buyUnit, cleanseCorruption, resetGame, viewMode
   } = useGame();
 
+  // Clock State - Moved to top to prevent conditional hook execution
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const [keyword, setKeyword] = useState('');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isShopOpen, setIsShopOpen] = useState(false);
