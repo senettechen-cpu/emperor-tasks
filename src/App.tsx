@@ -148,7 +148,7 @@ const MainDashboard = () => {
           title={resources.rp >= 20 ? "啟動淨化協議 (-20 RP / -30 腐壞)" : "資源不足"}
         >
           <h4 className={`!m-0 !tracking-[0.5em] transition-colors duration-300 text-sm md:text-xl font-bold ${corruption > 95 ? '!text-red-500 animate-pulse' : (corruption > 50 ? '!text-green-500' : '!text-mechanicus-red')}`}>
-            <span>{corruption > 95 ? '!! 亞空間裂隙 !!' : (corruption > 50 ? '亞空間能量：高' : '偵測亞空間能量')}</span>
+            <span>{corruption > 95 ? '!! 亞空間裂隙 !!' : (corruption > 50 ? '亞空間能量：高' : '偵測亞空間能量')} <span className="font-mono opacity-60 ml-2 text-xs">({Math.floor(corruption)}/100)</span></span>
           </h4>
           <div className="w-full md:w-64 h-2 bg-zinc-900 border border-mechanicus-red/30 mt-2 relative overflow-hidden">
             <div
