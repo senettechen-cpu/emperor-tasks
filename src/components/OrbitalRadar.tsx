@@ -156,10 +156,18 @@ export const OrbitalRadar: React.FC<OrbitalRadarProps> = ({ tasks, onSelectKey, 
                                 <span className="absolute -inset-4 border border-red-500/50 rounded-full animate-ping pointer-events-none block" />
                             )}
 
-                            {/* Blip Label on Hover */}
-                            <span className="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[12px] text-green-400 bg-black/90 px-2 py-1 border border-green-800 z-30 rounded shadow-lg">
-                                <span>{isOverdue ? `[逾期警告] ${blip.title}` : blip.title}</span>
-                            </span>
+                            {/* Title Label - Persistently Visible */}
+                            <div
+                                className={`absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full pointer-events-none whitespace-nowrap font-mono text-[9px] tracking-tight transition-all duration-300 ${isSelected ? 'text-white opacity-100 scale-110' : 'text-imperial-gold opacity-90'}`}
+                                style={{
+                                    textShadow: '1px 1px 3px black',
+                                    filter: isSelected ? 'drop-shadow(0 0 5px white)' : 'none'
+                                }}
+                            >
+                                <span className="bg-black/80 px-1.5 py-0.5 rounded border border-imperial-gold/40 uppercase font-bold shadow-2xl backdrop-blur-[1px]">
+                                    {isOverdue ? `[!!] ${blip.title}` : blip.title}
+                                </span>
+                            </div>
                         </button>
                     )
                 })}
