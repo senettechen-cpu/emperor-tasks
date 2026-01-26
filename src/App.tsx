@@ -102,13 +102,7 @@ const MainDashboard = () => {
     );
   }
 
-  // Clock State
-  const [currentTime, setCurrentTime] = useState(new Date());
 
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const formatDate = (date: Date) => {
     // Format: YYYY/MM/DD HH:mm:ss
