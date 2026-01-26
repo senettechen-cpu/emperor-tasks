@@ -7,7 +7,26 @@ interface NavigationArrayProps {
 }
 
 export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory }) => {
-    const { viewMode, setViewMode, resources } = useGame();
+    const { viewMode, setViewMode, resources, exportSTC, importSTC } = useGame();
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const content = e.target?.result as string;
+            if (content) importSTC(content);
+        };
+        reader.readAsText(file);
+        // Reset
+        if (event.target) event.target.value = '';
+    };
 
     return (
         <div className="w-full h-[60px] bg-black border-t border-imperial-gold flex items-center justify-between px-8 z-50 relative">
@@ -44,6 +63,30 @@ export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory }
                     <Map size={16} />
                     <span>戰略地圖</span>
                 </button>
+
+                {/* STC Operations */}
+                <div className="h-6 w-px bg-zinc-800 mx-2" />
+
+                <button
+                    onClick={exportSTC}
+                    className="h-8 px-4 flex items-center gap-2 font-mono text-[10px] tracking-wider border border-zinc-700 text-zinc-400 hover:text-green-400 hover:border-green-500 transition-colors"
+                >
+                    EXPORT STC
+                </button>
+
+                <button
+                    onClick={handleImportClick}
+                    className="h-8 px-4 flex items-center gap-2 font-mono text-[10px] tracking-wider border border-zinc-700 text-zinc-400 hover:text-blue-400 hover:border-blue-500 transition-colors"
+                >
+                    IMPORT STC
+                </button>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept=".json"
+                    className="hidden"
+                />
             </div>
 
             {/* Armory Toggle */}
