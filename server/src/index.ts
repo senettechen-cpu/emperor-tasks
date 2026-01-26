@@ -5,6 +5,7 @@ import { Pool } from 'pg';
 
 import taskRoutes from './routes/tasks';
 import gameStateRoutes from './routes/gameState';
+import projectRoutes from './routes/projects';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 
 app.use('/api/tasks', taskRoutes);
 app.use('/api/game-state', gameStateRoutes);
+app.use('/api/projects', projectRoutes);
 
 // Database connection
 const pool = new Pool({

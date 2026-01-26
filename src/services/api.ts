@@ -50,5 +50,37 @@ export const api = {
             body: JSON.stringify(state)
         });
         if (!response.ok) throw new Error('Failed to sync game state');
+    },
+
+    // Projects
+    getProjects: async (): Promise<Project[]> => {
+        const response = await fetch(`${API_URL}/projects`);
+        if (!response.ok) throw new Error('Failed to fetch projects');
+        return response.json();
+    },
+
+    createProject: async (project: Project): Promise<void> => {
+        const response = await fetch(`${API_URL}/projects`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(project)
+        });
+        if (!response.ok) throw new Error('Failed to create project');
+    },
+
+    updateProject: async (id: string, updates: Partial<Project>): Promise<void> => {
+        const response = await fetch(`${API_URL}/projects/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates)
+        });
+        if (!response.ok) throw new Error('Failed to update project');
+    },
+
+    deleteProject: async (id: string): Promise<void> => {
+        const response = await fetch(`${API_URL}/projects/${id}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) throw new Error('Failed to delete project');
     }
 };
