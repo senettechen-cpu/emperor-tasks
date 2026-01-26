@@ -62,25 +62,6 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
 
     const columns = useMemo(() => [
         {
-            title: '辨識碼',
-            dataIndex: 'id',
-            key: 'id',
-            width: 80,
-            render: (id: string) => <span className="text-[10px] font-mono text-imperial-gold/30"><span>#{id.slice(0, 4)}</span></span>,
-        },
-        {
-            title: '細別',
-            key: 'type',
-            width: 100,
-            render: (_: any, record: Task) => (
-                <Tag
-                    className={`!bg-transparent !border-0 font-mono text-[9px] px-1 ${record.isRecurring ? 'text-cyan-400 border border-cyan-400/30' : 'text-imperial-gold/40'}`}
-                >
-                    <span>{record.isRecurring ? '〔法令〕' : '〔臨時〕'}</span>
-                </Tag>
-            )
-        },
-        {
             title: '威脅源',
             dataIndex: 'faction',
             key: 'faction',
@@ -88,7 +69,14 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
             render: (faction: Faction) => (
                 <div className="flex items-center gap-2">
                     {FACTION_ICONS[faction]}
-                    <span className="text-xs uppercase font-mono text-imperial-gold/50"><span>{faction}</span></span>
+                    <span className="text-xs uppercase font-mono text-imperial-gold/50">
+                        {faction === 'orks' ? '獸人' :
+                            faction === 'nurgle' ? '納垢' :
+                                faction === 'khorne' ? '恐虐' :
+                                    faction === 'tzeentch' ? '奸奇' :
+                                        faction === 'slaanesh' ? '色虐' :
+                                            faction === 'necrons' ? '太空死靈' : '未知'}
+                    </span>
                 </div>
             ),
         },
@@ -136,7 +124,6 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
             width: 140,
             render: (_: any, record: Task) => (
                 <div className="flex gap-2">
-                    {/* Edit Button - Always visible if handler provided */}
                     {onEdit && (
                         <Tooltip title="修改參數">
                             <Button
@@ -178,7 +165,7 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
                     </Tooltip>
                 </div>
             ),
-        },
+        }
     ], [selectedId, viewMode, onEdit, onPurge]);
 
     return (
@@ -263,14 +250,14 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
                                         {task.title}
                                     </span>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <Tag className="!bg-transparent !border-zinc-700 !text-zinc-500 !m-0 text-[10px]">
-                                            #{task.id.slice(0, 4)}
-                                        </Tag>
-                                        {task.isRecurring && (
-                                            <Tag className="!bg-cyan-900/20 !border-cyan-500/30 !text-cyan-400 !m-0 text-[10px]">
-                                                法令
-                                            </Tag>
-                                        )}
+                                        <span className="text-[10px] text-zinc-500 uppercase font-mono">
+                                            {task.faction === 'orks' ? '獸人' :
+                                                task.faction === 'nurgle' ? '納垢' :
+                                                    task.faction === 'khorne' ? '恐虐' :
+                                                        task.faction === 'tzeentch' ? '奸奇' :
+                                                            task.faction === 'slaanesh' ? '色虐' :
+                                                                task.faction === 'necrons' ? '太空死靈' : '未知'}
+                                        </span>
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
