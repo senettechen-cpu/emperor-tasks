@@ -116,7 +116,7 @@ const MainDashboard = () => {
   };
 
   return (
-    <div className={`h-screen bg-black relative flex flex-col items-center overflow-hidden transition-all duration-300 ${corruption > 50 ? 'glitch-container' : ''}`}>
+    <div className={`h-screen bg-black relative flex flex-col items-center overflow-hidden transition-all duration-300 ${corruption > 95 ? 'glitch-container' : ''}`}>
       <div className="scanline" />
 
       <header className="w-full flex flex-col md:flex-row justify-between items-center p-4 md:p-6 border-b border-imperial-gold/20 z-10 bg-black/80 backdrop-blur-sm gap-4 md:gap-0">
@@ -147,8 +147,8 @@ const MainDashboard = () => {
           onClick={cleanseCorruption}
           title={resources.rp >= 20 ? "啟動淨化協議 (-20 RP / -30 腐壞)" : "資源不足"}
         >
-          <h4 className={`!m-0 !tracking-[0.5em] transition-colors duration-300 text-sm md:text-xl font-bold ${corruption > 50 ? '!text-red-500 animate-pulse' : '!text-mechanicus-red'}`}>
-            <span>{corruption > 50 ? '!! 亞空間裂隙 !!' : '偵測亞空間能量'}</span>
+          <h4 className={`!m-0 !tracking-[0.5em] transition-colors duration-300 text-sm md:text-xl font-bold ${corruption > 95 ? '!text-red-500 animate-pulse' : (corruption > 50 ? '!text-green-500' : '!text-mechanicus-red')}`}>
+            <span>{corruption > 95 ? '!! 亞空間裂隙 !!' : (corruption > 50 ? '亞空間能量：高' : '偵測亞空間能量')}</span>
           </h4>
           <div className="w-full md:w-64 h-2 bg-zinc-900 border border-mechanicus-red/30 mt-2 relative overflow-hidden">
             <div

@@ -101,9 +101,8 @@ export const OrbitalRadar: React.FC<OrbitalRadarProps> = ({ tasks, onSelectKey, 
                 />
 
                 {/* 任務光點 (Blips) */}
-                {blips.map((blip: any) => { // TODO: Define proper Blip type which extends Task
+                {blips.map((blip: any) => {
                     // 將極座標轉回 % 座標 (center is 50, 50)
-                    // r is 0-50 (radius of SVG)
                     const rPercent = blip.r / 2; // 0-50
                     const rad = (blip.theta * Math.PI) / 180;
                     const x = 50 + rPercent * Math.cos(rad);
@@ -113,28 +112,52 @@ export const OrbitalRadar: React.FC<OrbitalRadarProps> = ({ tasks, onSelectKey, 
                     const isSelected = selectedId === blip.id;
                     const isOverdue = new Date().getTime() > new Date(blip.dueDate).getTime();
 
+                    // Urgency Calculation
+                    const now = new Date().getTime();
+                    const due = new Date(blip.dueDate).getTime();
+                    const minutesRemaining = (due - now) / (1000 * 60);
+
+                    // Animation Logic
+                    let animationClass = '';
+                    if (isOverdue || minutesRemaining < 0) animationClass = 'animate-ping'; // Overdue: Fast Ping
+                    else if (minutesRemaining < 30) animationClass = 'animate-ping'; // < 30m: Fast Ping (High Urgency)
+                    else if (minutesRemaining < 60) animationClass = 'animate-pulse'; // < 1h: Pulse
+
+                    // Size Logic: Base 14px + Difficulty * 6 (More obvious)
+                    // Regular size logic
+                    const sizeVal = 14 + (blip.difficulty * 6);
+                    // Overdue scales up
+                    const scale = isOverdue ? 1.3 : 1;
+
                     return (
                         <button
                             key={blip.id}
-                            className={`absolute w-3 h-3 -ml-1.5 -mt-1.5 rounded-full z-20 cursor-pointer focus:outline-none group transition-all duration-300`}
+                            className={`absolute -ml-1.5 -mt-1.5 rounded-full z-20 cursor-pointer focus:outline-none group transition-all duration-300 flex items-center justify-center`}
                             style={{
                                 left: `${x}%`,
                                 top: `${y}%`,
-                                backgroundColor: isOverdue ? '#ef4444' : color, // Overdue is always RED
+                                width: `${sizeVal}px`,
+                                height: `${sizeVal}px`,
+                                transform: `translate(-50%, -50%) scale(${scale})`, // Centering correction
+                                backgroundColor: isOverdue ? '#ef4444' : color,
                                 boxShadow: isSelected ? `0 0 15px 2px ${color}` : `0 0 5px ${color}`,
                                 border: isSelected ? '2px solid white' : `1px solid black`,
-                                transform: isOverdue ? 'scale(1.2)' : 'scale(1)',
-                                opacity: isSelected ? 1 : 0.8
+                                opacity: isSelected ? 1 : 0.9
                             }}
                             onClick={() => onSelectKey(blip.id)}
                         >
-                            {/* Overdue Marker */}
+                            {/* Urgency Animation Layer */}
+                            {(minutesRemaining < 60 || isOverdue) && (
+                                <div className={`absolute -inset-1 rounded-full bg-inherit opacity-60 ${animationClass}`} />
+                            )}
+
+                            {/* Overdue Marker (Keep existing logic or merge?) */}
                             {isOverdue && (
                                 <span className="absolute -inset-4 border border-red-500/50 rounded-full animate-ping pointer-events-none block" />
                             )}
 
                             {/* Blip Label on Hover */}
-                            <span className="hidden group-hover:block absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-green-400 bg-black/80 px-1 border border-green-800 z-30">
+                            <span className="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[12px] text-green-400 bg-black/90 px-2 py-1 border border-green-800 z-30 rounded shadow-lg">
                                 <span>{isOverdue ? `[逾期警告] ${blip.title}` : blip.title}</span>
                             </span>
                         </button>
