@@ -102,32 +102,40 @@ export const RadarView: React.FC<RadarViewProps> = ({ tasks, onSelectKey, select
                 const size = 12 + (blip.difficulty * 4);
 
                 return (
-                    <motion.button
-                        key={blip.id}
-                        className={`absolute flex items-center justify-center rounded-full transition-all duration-300 hover:scale-125 focus:outline-none z-20`}
-                        style={{
-                            x,
-                            y,
-                            width: `${size}px`,
-                            height: `${size}px`,
-                            backgroundColor: color,
-                            boxShadow: `0 0 ${isSelected ? '20px' : '10px'} ${color}`,
-                            border: isSelected ? '2px solid white' : 'none'
-                        }}
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        onClick={() => onSelectKey(blip.id)}
-                        whileHover={{ scale: 1.2 }}
-                    >
-                        {/* Animation Layer */}
-                        {(minutesRemaining < 60) && (
-                            <div className={`absolute -inset-1 rounded-full bg-inherit opacity-50 ${animationClass}`} />
-                        )}
+                    <div className="absolute" style={{ x, y, width: 0, height: 0 }}>
+                        <motion.button
+                            key={blip.id}
+                            className={`absolute flex items-center justify-center rounded-full transition-all duration-300 hover:scale-125 focus:outline-none z-20 -translate-x-1/2 -translate-y-1/2`}
+                            style={{
+                                width: `${size}px`,
+                                height: `${size}px`,
+                                backgroundColor: color,
+                                boxShadow: `0 0 ${isSelected ? '20px' : '10px'} ${color}`,
+                                border: isSelected ? '1px solid white' : 'none'
+                            }}
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            onClick={() => onSelectKey(blip.id)}
+                            whileHover={{ scale: 1.2 }}
+                        >
+                            {/* Animation Layer */}
+                            {(minutesRemaining < 60) && (
+                                <div className={`absolute -inset-1 rounded-full bg-inherit opacity-50 ${animationClass}`} />
+                            )}
 
-                        {isSelected && (
-                            <div className="absolute -inset-4 border border-white/50 rounded-full animate-ping opacity-30" />
-                        )}
-                    </motion.button>
+                            {isSelected && (
+                                <div className="absolute -inset-4 border border-white/50 rounded-full animate-ping opacity-30" />
+                            )}
+                        </motion.button>
+
+                        {/* Title Label */}
+                        <div
+                            className={`absolute left-4 top-0 pointer-events-none whitespace-now-word font-mono text-[9px] tracking-tighter transition-opacity duration-300 ${isSelected ? 'text-white opacity-100' : 'text-imperial-gold/60 opacity-40'}`}
+                            style={{ textShadow: '1px 1px 2px black' }}
+                        >
+                            <span className="bg-black/40 px-1 rounded uppercase">{blip.title}</span>
+                        </div>
+                    </div>
                 );
             })}
         </div>

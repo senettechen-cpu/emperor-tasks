@@ -56,16 +56,7 @@ const MainDashboard = () => {
     if (slateViewMode === 'mandates') {
       return tasks.filter(t => t.isRecurring);
     }
-
-    const todayStr = new Date().toLocaleDateString();
-    return tasks.filter(t => {
-      if (t.status !== 'active') return false;
-      if (t.isRecurring) {
-        const lastCompStr = t.lastCompletedAt ? new Date(t.lastCompletedAt).toLocaleDateString() : '';
-        return lastCompStr !== todayStr;
-      }
-      return true;
-    });
+    return tasks.filter(t => !t.isRecurring);
   }, [tasks, slateViewMode]);
   const selectedTask = useMemo(() => activeTasks.find(t => t.id === selectedTaskId), [selectedTaskId, activeTasks]);
 

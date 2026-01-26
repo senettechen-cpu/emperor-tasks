@@ -184,45 +184,57 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
                     </Select>
                 </div>
 
-                <div>
-                    <label className="text-imperial-gold/70 font-mono block mb-2">截止時間 (ETA)</label>
-                    <DatePicker
-                        showTime
-                        value={dueDate}
-                        onChange={val => setDueDate(val || dayjs())}
-                        className="w-full !bg-zinc-900 !border-imperial-gold/30 !text-white"
-                    />
-                </div>
+                <div className="bg-zinc-900/50 p-4 border border-imperial-gold/20 rounded space-y-4">
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            checked={isRecurring}
+                            onChange={e => setIsRecurring(e.target.checked)}
+                            className="!text-imperial-gold font-mono"
+                        >
+                            每日固定任務 (IMPERIAL MANDATE)
+                        </Checkbox>
+                    </div>
 
-                <div>
-                    <label className="text-imperial-gold/70 font-mono block mb-2">威脅等級 (THREAT LEVEL): {difficulty}</label>
-                    <Slider
-                        min={1}
-                        max={5}
-                        step={1}
-                        marks={{
-                            1: '微小',
-                            2: '低度',
-                            3: '中度',
-                            4: '高度',
-                            5: '極限'
-                        }}
-                        value={difficulty}
-                        onChange={setDifficulty}
-                        railStyle={{ backgroundColor: '#333' }}
-                        trackStyle={{ backgroundColor: '#ef4444' }}
-                        handleStyle={{ borderColor: '#ef4444', backgroundColor: '#ef4444' }}
-                    />
-                </div>
+                    {isRecurring && (
+                        <div className="text-[10px] text-cyan-400 font-mono animate-pulse">
+                            任務將在每天 00:00 自動重置並重新開放。
+                        </div>
+                    )}
 
-                <div className="flex items-center gap-2 pt-4">
-                    <Checkbox
-                        checked={isRecurring}
-                        onChange={e => setIsRecurring(e.target.checked)}
-                        className="!text-imperial-gold font-mono"
-                    >
-                        每日固定任務 (IMPERIAL MANDATE)
-                    </Checkbox>
+                    <div>
+                        <label className="text-imperial-gold/70 font-mono block mb-2 text-xs">
+                            {isRecurring ? '每日執行時間 (DAILY TIME)' : '截止時間 (ETA)'}
+                        </label>
+                        <DatePicker
+                            showTime
+                            format={isRecurring ? "HH:mm" : "YYYY-MM-DD HH:mm"}
+                            picker={isRecurring ? "time" : "date"}
+                            value={dueDate}
+                            onChange={val => setDueDate(val || dayjs())}
+                            className="w-full !bg-zinc-900 !border-imperial-gold/30 !text-white"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="text-imperial-gold/70 font-mono block mb-2 text-xs">威脅等級 (THREAT LEVEL): {difficulty}</label>
+                        <Slider
+                            min={1}
+                            max={5}
+                            step={1}
+                            marks={{
+                                1: '微小',
+                                2: '低度',
+                                3: '中度',
+                                4: '高度',
+                                5: '極限'
+                            }}
+                            value={difficulty}
+                            onChange={setDifficulty}
+                            railStyle={{ backgroundColor: '#333' }}
+                            trackStyle={{ backgroundColor: '#ef4444' }}
+                            handleStyle={{ borderColor: '#ef4444', backgroundColor: '#ef4444' }}
+                        />
+                    </div>
                 </div>
 
                 <Button

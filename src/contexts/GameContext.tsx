@@ -234,20 +234,18 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return prev.map(t => {
                 if (t.id === id) {
                     if (t.isRecurring) {
-                        const updated = { ...t, lastCompletedAt: new Date() };
-                        api.updateTask(id, { lastCompletedAt: updated.lastCompletedAt }).catch(e => console.error(e));
+                        const updated = { ...t, lastCompletedAt: new Date(), status: 'active' as const };
+                        api.updateTask(id, { lastCompletedAt: updated.lastCompletedAt, status: 'active' }).catch(e => console.error(e));
                         return updated;
                     }
-                    // For one-off, we mark as completed in UI but maybe delete from DB or just update status?
-                    // Previous logic: 'completed'.
                     api.updateTask(id, { status: 'completed' }).catch(e => console.error(e));
-                    // Or if we want to DELETE from DB:
-                    // api.deleteTask(id);
-                    // But history is good. Let's keep status='completed'.
                     return { ...t, status: 'completed' as const };
                 }
                 return t;
-            }).filter(t => !(!t.isRecurring && t.status === 'completed')); // Keep recurring, filter completed
+            }).filter(t => {
+                if (t.isRecurring) return true; // Keep recurring tasks in the state, filter in UI or logic
+                return t.status !== 'completed';
+            });
         });
 
         // Reward Logic
@@ -589,7 +587,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     return (
         <GameContext.Provider value={{
-            tasks, resources, corruption, ownedUnits, isPenitentMode,
+            tasks: tasks.filter(t => {
+                if (!t.isRecurring) return t.status === 'active';
+                if (!t.lastCompletedAt) return true;
+                const lastComp = new Date(t.lastCompletedAt).toLocaleDateString();
+                const now = new Date().toLocaleDateString();
+                return lastComp !== now;
+            }),
+            resources, corruption, ownedUnits, isPenitentMode,
             addTask, updateTask, purgeTask, buyUnit, cleanseCorruption, resetGame,
             radarTheme, purchaseItem,
             viewMode, setViewMode, projects, addProject,
