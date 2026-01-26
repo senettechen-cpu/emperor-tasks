@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { ConfigProvider, Input, Typography, theme, Button } from 'antd'
 import zhTW from 'antd/locale/zh_TW'
-import { Plus, ShoppingCart, AlertTriangle, Map as MapIcon } from 'lucide-react'
+import { Plus, ShoppingCart, AlertTriangle, Map as MapIcon, Radar } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RadarView } from './components/RadarView' // Keep old one just in case, or remove
 import { OrbitalRadar } from './components/OrbitalRadar'
@@ -30,6 +30,7 @@ const MainDashboard = () => {
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isArmoryOpen, setIsArmoryOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false); // Mobile Drawer State
   const [editingTask, setEditingTask] = useState<any>(null); // Task | null
   const [slateViewMode, setSlateViewMode] = useState<'active' | 'mandates'>('active');
   const [showRpFeedback, setShowRpFeedback] = useState(false);
@@ -182,8 +183,23 @@ const MainDashboard = () => {
       <main className="flex-1 w-full flex flex-row overflow-hidden relative">
         {viewMode === 'tactical' ? (
           <>
-            {/* LEFT PANEL: Task Data & Input */}
-            <div className="w-full md:w-1/2 h-full flex flex-col border-r border-imperial-gold/20 bg-black/40 relative z-20">
+            {/* LEFT PANEL: Task Data & Input (Drawer on Mobile) */}
+            <div
+              className={`
+                    fixed inset-y-0 left-0 z-50 w-[85%] bg-black/95 border-r border-imperial-gold/30 transform transition-transform duration-300 md:relative md:transform-none md:w-1/2 md:flex md:flex-col md:bg-black/40
+                    ${isDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                `}
+            >
+              {/* Mobile Drawer Close Button */}
+              <div className="md:hidden absolute top-4 right-4 z-50">
+                <Button
+                  type="text"
+                  icon={<MapIcon className="text-imperial-gold" />}
+                  onClick={() => setIsDrawerOpen(false)}
+                  className="!text-imperial-gold border border-imperial-gold/30"
+                />
+              </div>
+
               <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-imperial-gold/20 scrollbar-track-transparent">
                 <TaskDataSlate
                   tasks={activeTasks}
@@ -193,12 +209,14 @@ const MainDashboard = () => {
                   onOpenAddModal={() => {
                     setEditingTask(null);
                     setIsAddModalOpen(true);
+                    setIsDrawerOpen(false); // Close drawer on mobile
                   }}
                   viewMode={slateViewMode}
                   onToggleView={setSlateViewMode}
                   onEdit={(task) => {
                     setEditingTask(task);
                     setIsAddModalOpen(true);
+                    setIsDrawerOpen(false);
                   }}
                 />
               </div>
@@ -215,13 +233,34 @@ const MainDashboard = () => {
               </div>
             </div>
 
-            {/* RIGHT PANEL: Radar & Visuals (Hidden on Mobile) */}
-            <div className="hidden md:flex md:w-1/2 h-full relative items-center justify-center bg-zinc-900/10">
+            {/* Mobile Drawer Overlay */}
+            {isDrawerOpen && (
+              <div
+                className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+                onClick={() => setIsDrawerOpen(false)}
+              />
+            )}
+
+            {/* RIGHT PANEL: Radar & Visuals (Visible by default on Mobile now) */}
+            <div className="w-full h-full md:w-1/2 relative flex items-center justify-center bg-zinc-900/10">
               <OrbitalRadar
                 tasks={activeTasks}
                 selectedId={selectedTaskId}
-                onSelectKey={setSelectedTaskId}
+                onSelectKey={(id) => {
+                  setSelectedTaskId(id);
+                  setIsDrawerOpen(true); // Open drawer to show details when blip clicked
+                }}
               />
+
+              {/* Mobile Drawer Toggle Button (Floating) */}
+              <div className="absolute top-4 left-4 z-30 md:hidden">
+                <Button
+                  onClick={() => setIsDrawerOpen(true)}
+                  className="!bg-black/80 !border-imperial-gold/50 !text-imperial-gold !h-12 !w-12 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(251,191,36,0.3)]"
+                >
+                  <Radar size={24} />
+                </Button>
+              </div>
 
               {/* 已購單位展示 */}
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
