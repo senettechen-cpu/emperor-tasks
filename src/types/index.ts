@@ -40,17 +40,11 @@ export interface Project {
     completed: boolean;
 }
 
-export interface UnitCount {
-    guardsmen: number;
-    spaceMarines: number;
-    custodes: number;
-    dreadnought: number;
-    baneblade: number;
-}
+export type UnitType = 'guardsmen' | 'space_marine' | 'custodes' | 'dreadnought' | 'baneblade';
 
 export interface ArmyStrength {
-    reserves: UnitCount;
-    garrisons: Record<string, UnitCount>; // e.g. "M1": { guardsmen: 10, ... }
+    reserves: Record<UnitType, number>;
+    garrisons: Record<string, Record<UnitType, number>>; // e.g. "M1": { guardsmen: 10, ... }
     totalActivePower: number; // Sum of all garrisons' power (Effective Defense)
 }
 

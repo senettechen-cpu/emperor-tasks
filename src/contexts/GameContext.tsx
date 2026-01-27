@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Task, Resources, Faction, Project, ArmyStrength, SectorTrait, PlanetaryTraitType, BattleResult, SectorHistory } from '../types';
+import { Task, Resources, Faction, Project, ArmyStrength, SectorTrait, PlanetaryTraitType, BattleResult, SectorHistory, UnitType } from '../types';
 import { api } from '../services/api';
 
 interface GameContextType {
@@ -26,25 +26,29 @@ interface GameContextType {
     addSubTask: (projectId: string, title: string) => void;
     completeSubTask: (projectId: string, subTaskId: string) => void;
     deleteProject: (projectId: string) => void;
-    recruitUnit: (type: 'guardsmen' | 'space_marine' | 'custodes' | 'dreadnought' | 'baneblade') => void;
 
     // Deployment Actions
-    deployUnit: (monthId: string, type: 'guardsmen' | 'space_marine' | 'custodes' | 'dreadnought' | 'baneblade', count: number) => void;
-    recallUnit: (monthId: string, type: 'guardsmen' | 'space_marine' | 'custodes' | 'dreadnought' | 'baneblade', count: number) => void;
-
     armyStrength: ArmyStrength;
-    // STC & Sector Traits
-    // sectorTraits removed, replaced by dynamic calculation
+    currentMonth: number;
     getTraitForMonth: (monthId: string) => PlanetaryTraitType;
-    exportSTC: () => void;
-    importSTC: (jsonData: string) => void;
-
-    // Time & Battle Resolution
-    currentMonth: number; // 0-11
     sectorHistory: SectorHistory;
     resolveSector: (monthId: string) => void;
     advanceMonth: () => void; // Debug/Cheat
     allTasks: Task[]; // Unfiltered list for management
+
+    // New Mechanics
+    activeTacticalScan: boolean;
+    activateTacticalScan: () => void;
+    fortifiedSectors: string[];
+    fortifySector: (monthId: string) => void;
+    triggerBattlefieldMiracle: (monthId: string) => void;
+    deployUnit: (monthId: string, unitType: UnitType, count: number) => void;
+    recallUnit: (monthId: string, unitType: UnitType, count: number) => void;
+    recruitUnit: (type: UnitType) => void;
+
+    // STC
+    exportSTC: () => void;
+    importSTC: (jsonData: string) => Promise<void>;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -60,11 +64,30 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Strategic Mode States
     const [viewMode, setViewMode] = useState<'tactical' | 'strategic'>('tactical');
     const [projects, setProjects] = useState<Project[]>([]);
+
     const [armyStrength, setArmyStrength] = useState<ArmyStrength>({
-        reserves: { guardsmen: 0, spaceMarines: 0, custodes: 0, dreadnought: 0, baneblade: 0 },
+        reserves: { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 },
         garrisons: {},
         totalActivePower: 0
     });
+    const [activeTacticalScan, setActiveTacticalScan] = useState(false);
+    const [fortifiedSectors, setFortifiedSectors] = useState<string[]>([]);
+
+    const calculateActivePower = (garrisons: Record<string, Record<UnitType, number>>) => {
+        const POWER = { guardsmen: 50, space_marine: 300, custodes: 1500, dreadnought: 500, baneblade: 5000 };
+        let total = 0;
+        Object.values(garrisons).forEach((g) => {
+            total += (g.guardsmen || 0) * POWER.guardsmen;
+            total += (g.space_marine || 0) * POWER.space_marine;
+            total += (g.custodes || 0) * POWER.custodes;
+            total += (g.dreadnought || 0) * POWER.dreadnought;
+            total += (g.baneblade || 0) * POWER.baneblade;
+        });
+        if (ownedUnits.includes('librarian')) total += 1000;
+        if (ownedUnits.includes('barge')) total += 10000;
+        return total;
+    };
+
 
     // Time & Battle Resolution State
     const [currentMonth, setCurrentMonth] = useState<number>(0);
@@ -148,11 +171,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return 'barren';                     // Empty
     };
 
-    // Time & Battle Resolution State
-    // ...
-
     // Corruption Engine
-    // ... Same as before
     useEffect(() => {
         const timer = setInterval(() => {
             const now = new Date();
@@ -176,12 +195,60 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const multiplier = currentTrait === 'shrine' ? 0.5 : 1;
 
             if (overdueTasks > 0) {
-                setCorruption(prev => Math.min(100, prev + (overdueTasks * 1 * multiplier)));
+                // Check if the current month has a garrison
+                const currentGarrison = armyStrength.garrisons[currentMonthId] || { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
+                const hasGarrison = (currentGarrison.guardsmen || 0) + (currentGarrison.space_marine || 0) + (currentGarrison.custodes || 0) + (currentGarrison.dreadnought || 0) + (currentGarrison.baneblade || 0) > 0;
+
+                if (hasGarrison) {
+                    console.log(`Garrison in ${currentMonthId} is holding the line!`);
+                    // Negate corruption increase (Defense Success)
+                    // Attrition Logic: Loose troops based on overdue count (Simulated)
+                    setArmyStrength(prev => {
+                        const garrison = { ...prev.garrisons[currentMonthId] };
+                        let damage = overdueTasks;
+
+                        // Guardsmen take damage first
+                        if (garrison.guardsmen >= damage) {
+                            garrison.guardsmen -= damage;
+                            damage = 0;
+                        } else {
+                            damage -= garrison.guardsmen;
+                            garrison.guardsmen = 0;
+                            // Then Marines
+                            if (garrison.space_marine >= damage) {
+                                garrison.space_marine -= damage;
+                                damage = 0;
+                            } else {
+                                garrison.space_marine = Math.max(0, garrison.space_marine - damage);
+                                // Damage propagates... realistically just reduce somewhat
+                            }
+                        }
+
+                        const newGarrisons = { ...prev.garrisons, [currentMonthId]: garrison };
+                        return {
+                            ...prev,
+                            garrisons: newGarrisons,
+                            totalActivePower: calculateActivePower(newGarrisons)
+                        };
+                    });
+
+                } else {
+                    // No Garrison - Check Fortification
+                    let corruptionIncrease = overdueTasks * 1 * multiplier;
+
+                    if (fortifiedSectors.includes(currentMonthId)) {
+                        corruptionIncrease *= 0.5;
+                        console.log("Fortification reduced corruption gain.");
+                    }
+
+                    setCorruption(prev => Math.min(100, prev + corruptionIncrease));
+                }
             }
+
         }, 60000); // Check every minute
 
         return () => clearInterval(timer);
-    }, [tasks]);
+    }, [tasks, armyStrength, fortifiedSectors]); // Added dependencies
 
     // Penitent Mode Trigger
     useEffect(() => {
@@ -250,8 +317,16 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
 
         // Reward Logic
+        let rpReward = 10;
+        if (activeTacticalScan) {
+            const task = tasks.find(t => t.id === id);
+            if (task && task.difficulty >= 4) {
+                rpReward *= 2;
+                setActiveTacticalScan(false); // Consume charge
+            }
+        }
         setResources(prev => {
-            const newRp = (prev?.rp || 0) + 10;
+            const newRp = (prev?.rp || 0) + rpReward;
             const newGlory = (prev?.glory || 0) + 5;
             return { ...prev, rp: newRp, glory: newGlory };
         });
@@ -404,21 +479,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         api.deleteProject(projectId).catch(err => console.error("Failed to delete project", err));
     };
 
-    const calculateActivePower = (garrisons: Record<string, any>) => {
-        const POWER = { guardsmen: 50, spaceMarines: 300, custodes: 1500 };
-        let total = 0;
-        Object.values(garrisons).forEach((g: any) => {
-            total += (g.guardsmen || 0) * POWER.guardsmen;
-            total += (g.spaceMarines || 0) * POWER.spaceMarines;
-            total += (g.custodes || 0) * POWER.custodes;
-        });
-        if (ownedUnits.includes('librarian')) total += 1000;
-        if (ownedUnits.includes('barge')) total += 10000;
-        if (ownedUnits.includes('baneblade')) total += 5000;
-        return total;
-    };
-
-    const recruitUnit = (type: 'guardsmen' | 'space_marine' | 'custodes' | 'dreadnought' | 'baneblade') => {
+    const recruitUnit = (type: UnitType) => {
         const COSTS = { guardsmen: 10, space_marine: 50, custodes: 1000, dreadnought: 100, baneblade: 2000 };
         let cost = COSTS[type];
 
@@ -432,12 +493,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (resources.glory >= cost) {
             setResources(prev => ({ ...prev, glory: prev.glory - cost }));
             setArmyStrength(prev => {
-                const typeKey = type === 'space_marine' ? 'spaceMarines' : type;
                 return {
                     ...prev,
                     reserves: {
                         ...prev.reserves,
-                        [typeKey]: prev.reserves[typeKey] + 1
+                        [type]: (prev.reserves[type] || 0) + 1
                     }
                 };
             });
@@ -446,30 +506,69 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return false;
     };
 
-    const deployUnit = (monthId: string, type: 'guardsmen' | 'space_marine' | 'custodes' | 'dreadnought' | 'baneblade', count: number) => {
+    const deployUnit = (monthId: string, type: UnitType, count: number) => {
         setArmyStrength(prev => {
-            const typeKey = type === 'space_marine' ? 'spaceMarines' : type;
-            if (prev.reserves[typeKey] < count) return prev;
-            const newReserves = { ...prev.reserves, [typeKey]: prev.reserves[typeKey] - count };
-            const currentGarrison = prev.garrisons[monthId] || { guardsmen: 0, spaceMarines: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
-            const newGarrison = { ...currentGarrison, [typeKey]: (currentGarrison[typeKey] || 0) + count };
+            if ((prev.reserves[type] || 0) < count) return prev;
+
+            const newReserves = { ...prev.reserves, [type]: prev.reserves[type] - count };
+
+            const currentGarrison = prev.garrisons[monthId] || { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
+            const newGarrison = { ...currentGarrison, [type]: (currentGarrison[type] || 0) + count };
+
             const newGarrisons = { ...prev.garrisons, [monthId]: newGarrison };
             const newTotalPower = calculateActivePower(newGarrisons);
+
             return { reserves: newReserves, garrisons: newGarrisons, totalActivePower: newTotalPower };
         });
     };
 
-    const recallUnit = (monthId: string, type: 'guardsmen' | 'space_marine' | 'custodes' | 'dreadnought' | 'baneblade', count: number) => {
+    const recallUnit = (monthId: string, type: UnitType, count: number) => {
         setArmyStrength(prev => {
-            const typeKey = type === 'space_marine' ? 'spaceMarines' : type;
-            const currentGarrison = prev.garrisons[monthId] || { guardsmen: 0, spaceMarines: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
-            if ((currentGarrison[typeKey] || 0) < count) return prev;
-            const newGarrison = { ...currentGarrison, [typeKey]: (currentGarrison[typeKey] || 0) - count };
+            const currentGarrison = prev.garrisons[monthId] || { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
+            if ((currentGarrison[type] || 0) < count) return prev;
+
+            const newGarrison = { ...currentGarrison, [type]: (currentGarrison[type] || 0) - count };
             const newGarrisons = { ...prev.garrisons, [monthId]: newGarrison };
-            const newReserves = { ...prev.reserves, [typeKey]: prev.reserves[typeKey] + count };
+
+            const newReserves = { ...prev.reserves, [type]: (prev.reserves[type] || 0) + count };
             const newTotalPower = calculateActivePower(newGarrisons);
+
             return { reserves: newReserves, garrisons: newGarrisons, totalActivePower: newTotalPower };
         });
+    };
+
+    const activateTacticalScan = () => {
+        if (resources.rp >= 15 && !activeTacticalScan) {
+            setResources(prev => ({ ...prev, rp: prev.rp - 15 }));
+            setActiveTacticalScan(true);
+        }
+    };
+
+    const fortifySector = (monthId: string) => {
+        if (resources.rp >= 40 && !fortifiedSectors.includes(monthId)) {
+            setResources(prev => ({ ...prev, rp: prev.rp - 40 }));
+            setFortifiedSectors(prev => [...prev, monthId]);
+        }
+    };
+
+    const triggerBattlefieldMiracle = (monthId: string) => {
+        if (resources.glory >= 500) {
+            // Check completion rate
+            const sectorTasks = projects.filter(p => p.month === monthId);
+            const total = sectorTasks.length;
+            const completed = sectorTasks.filter(p => p.completed).length;
+            const rate = total > 0 ? completed / total : 0;
+
+            if (rate > 0.7) {
+                setResources(prev => ({ ...prev, glory: prev.glory - 500, rp: prev.rp + 100 }));
+                // Clear corruption logic? Global or specific?
+                // "Clear all corruption penalties for that month" - usually implies sector traits or just reduce corruption massively
+                setCorruption(prev => Math.max(0, prev - 50));
+                console.log("Miracle Triggered!");
+            } else {
+                console.warn("Faith is insufficient.");
+            }
+        }
     };
 
     const exportSTC = () => {
@@ -507,7 +606,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setOwnedUnits(Array.isArray(data.ownedUnits) ? data.ownedUnits : []);
             setRadarTheme(data.radarTheme || 'green');
             setProjects(data.projects || []);
-            setArmyStrength(data.armyStrength || { reserves: { guardsmen: 0, spaceMarines: 0, custodes: 0, dreadnought: 0, baneblade: 0 }, garrisons: {}, totalActivePower: 0 });
+            setArmyStrength(data.armyStrength || { reserves: { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 }, garrisons: {}, totalActivePower: 0 });
+
             setCurrentMonth(data.currentMonth !== undefined ? data.currentMonth : new Date().getMonth());
             setSectorHistory(data.sectorHistory || {});
 
@@ -567,9 +667,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return;
         }
         const scalingThreat = Math.floor(500 * Math.pow(1.52, targetMonthIdx));
-        const garrison = armyStrength.garrisons[monthId] || { guardsmen: 0, spaceMarines: 0, custodes: 0 };
+        const garrison = armyStrength.garrisons[monthId] || { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
         const garrisonPower = calculateActivePower({ [monthId]: garrison });
         const isVictory = garrisonPower >= scalingThreat;
+
         const result: BattleResult = isVictory ? 'victory' : 'defeat';
 
         if (isVictory) {
@@ -604,7 +705,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             armyStrength,
             getTraitForMonth, exportSTC, importSTC,
             currentMonth, sectorHistory, resolveSector, advanceMonth,
-            allTasks: tasks
+            allTasks: tasks,
+            activeTacticalScan, activateTacticalScan, fortifiedSectors, fortifySector, triggerBattlefieldMiracle
         }}>
             {children}
         </GameContext.Provider>

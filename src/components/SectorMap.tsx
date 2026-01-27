@@ -14,10 +14,10 @@ const TRAIT_CONFIG: Record<PlanetaryTraitType, { name: string, effect: string, i
     'barren': { name: '荒蕪世界 (Lv0)', effect: '專案數 0', icon: <CircleDashed size={14} />, color: '#71717a' },
 };
 
-const POWER_VALUES = { guardsmen: 50, spaceMarines: 300, custodes: 1500, dreadnought: 1000, baneblade: 5000 };
+const POWER_VALUES = { guardsmen: 50, space_marine: 300, custodes: 1500, dreadnought: 1000, baneblade: 5000 };
 
 export const SectorMap: React.FC = () => {
-    const { armyStrength, projects, addProject, addSubTask, completeSubTask, deleteProject, getTraitForMonth, deployUnit, recallUnit, currentMonth, sectorHistory, resolveSector } = useGame();
+    const { armyStrength, projects, addProject, addSubTask, completeSubTask, deleteProject, getTraitForMonth, deployUnit, recallUnit, currentMonth, sectorHistory, resolveSector, fortifySector, fortifiedSectors, triggerBattlefieldMiracle, resources } = useGame();
     const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [activeTab, setActiveTab] = useState<'projects' | 'deployment'>('projects');
@@ -76,7 +76,7 @@ export const SectorMap: React.FC = () => {
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-zinc-800">
                     {[
                         { id: 'guardsmen', name: '星界軍', count: armyStrength.reserves.guardsmen, img: '/units/guardsman.png', border: 'border-imperial-gold' },
-                        { id: 'spaceMarines', name: '星際戰士', count: armyStrength.reserves.spaceMarines, img: '/units/marine.png', border: 'border-blue-500' },
+                        { id: 'space_marine', name: '星際戰士', count: armyStrength.reserves.space_marine, img: '/units/marine.png', border: 'border-blue-500' },
                         { id: 'custodes', name: '禁軍', count: armyStrength.reserves.custodes, img: '/units/custodes.png', border: 'border-yellow-400' },
                         { id: 'dreadnought', name: '無畏機甲', count: armyStrength.reserves.dreadnought, img: '/units/dreadnought.png', border: 'border-zinc-400' },
                         { id: 'baneblade', name: '帝皇毒刃', count: armyStrength.reserves.baneblade, img: '/units/baneblade.png', border: 'border-red-600' },
@@ -139,9 +139,10 @@ export const SectorMap: React.FC = () => {
                                 const trait = TRAIT_CONFIG[traitType];
                                 const monthIndex = parseInt(month.id.slice(1)) - 1;
                                 const scalingThreat = Math.floor(500 * Math.pow(1.52, monthIndex));
-                                const garrison = armyStrength.garrisons[month.id] || { guardsmen: 0, spaceMarines: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
-                                const garrisonPower = (garrison.guardsmen * POWER_VALUES.guardsmen) + (garrison.spaceMarines * POWER_VALUES.spaceMarines) + (garrison.custodes * POWER_VALUES.custodes) + ((garrison.dreadnought || 0) * POWER_VALUES.dreadnought) + ((garrison.baneblade || 0) * POWER_VALUES.baneblade);
+                                const garrison = armyStrength.garrisons[month.id] || { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
+                                const garrisonPower = (garrison.guardsmen * POWER_VALUES.guardsmen) + (garrison.space_marine * POWER_VALUES.space_marine) + (garrison.custodes * POWER_VALUES.custodes) + ((garrison.dreadnought || 0) * POWER_VALUES.dreadnought) + ((garrison.baneblade || 0) * POWER_VALUES.baneblade);
                                 const isDefended = garrisonPower >= scalingThreat;
+                                const isFortified = fortifiedSectors.includes(month.id);
 
                                 return (
                                     <Card
@@ -176,6 +177,7 @@ export const SectorMap: React.FC = () => {
                                             <div className="flex gap-1 mt-2">
                                                 <Tag color={isActive ? "gold" : "default"} className="font-mono !m-0">{count} 專案</Tag>
                                                 {!isPast && <Tag color={isDefended ? "success" : "error"} className="font-mono !m-0">{Math.round(garrisonPower / 100)} PWR</Tag>}
+                                                {isFortified && <Tag color="purple" className="font-mono !m-0"><Shield size={10} className="inline mr-1" />要塞</Tag>}
                                             </div>
                                         </div>
                                     </Card>
@@ -196,7 +198,34 @@ export const SectorMap: React.FC = () => {
                                 <button className={`px-6 py-4 font-mono font-bold transition-all ${activeTab === 'projects' ? 'text-black bg-imperial-gold' : 'text-zinc-500 hover:text-white'}`} onClick={() => setActiveTab('projects')}>戰略專案</button>
                                 <button className={`px-6 py-4 font-mono font-bold transition-all ${activeTab === 'deployment' ? 'text-black bg-imperial-gold' : 'text-zinc-500 hover:text-white'}`} onClick={() => setActiveTab('deployment')}>部隊部署</button>
                             </div>
-                            <div className="px-4 text-imperial-gold font-mono tracking-widest text-lg pr-12">星區: {selectedMonth}</div>
+                            <div className="px-4 text-imperial-gold font-mono tracking-widest text-lg pr-12 flex items-center gap-4">
+                                <span>星區: {selectedMonth}</span>
+                                {selectedMonth && !fortifiedSectors.includes(selectedMonth) && (
+                                    <Tooltip title="消耗 40 RP 將此星區要塞化，減少 50% 腐壞增長">
+                                        <Button
+                                            size="small"
+                                            className="!bg-purple-900/20 !border-purple-500 !text-purple-400 font-bold"
+                                            onClick={() => fortifySector(selectedMonth)}
+                                            disabled={resources.rp < 40}
+                                        >
+                                            <Shield size={14} className="mr-1" /> 要塞化 (40 RP)
+                                        </Button>
+                                    </Tooltip>
+                                )}
+                                {selectedMonth && fortifiedSectors.includes(selectedMonth) && (
+                                    <Tag color="purple" className="font-mono m-0 flex items-center"><Shield size={14} className="mr-1" /> 已要塞化</Tag>
+                                )}
+                                <Tooltip title="消耗 500 Glory 發動神蹟 (需任務完成率 > 70%)">
+                                    <Button
+                                        size="small"
+                                        className="!bg-imperial-gold/20 !border-imperial-gold !text-imperial-gold font-bold animate-pulse"
+                                        onClick={() => triggerBattlefieldMiracle(selectedMonth!)}
+                                        disabled={resources.glory < 500}
+                                    >
+                                        <Star size={14} className="mr-1" /> 神蹟 (500 G)
+                                    </Button>
+                                </Tooltip>
+                            </div>
                             <button onClick={() => setIsModalOpen(false)} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white font-mono text-xl p-2 hover:bg-zinc-800 rounded">X</button>
                         </div>
 
@@ -207,8 +236,8 @@ export const SectorMap: React.FC = () => {
                                     {(() => {
                                         const monthIndex = parseInt(selectedMonth!.slice(1)) - 1;
                                         const scalingThreat = Math.floor(500 * Math.pow(1.52, monthIndex));
-                                        const garrison = armyStrength.garrisons[selectedMonth!] || { guardsmen: 0, spaceMarines: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
-                                        const garrisonPower = (garrison.guardsmen * POWER_VALUES.guardsmen) + (garrison.spaceMarines * POWER_VALUES.spaceMarines) + (garrison.custodes * POWER_VALUES.custodes) + ((garrison.dreadnought || 0) * POWER_VALUES.dreadnought) + ((garrison.baneblade || 0) * POWER_VALUES.baneblade);
+                                        const garrison = armyStrength.garrisons[selectedMonth!] || { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
+                                        const garrisonPower = (garrison.guardsmen * POWER_VALUES.guardsmen) + (garrison.space_marine * POWER_VALUES.space_marine) + (garrison.custodes * POWER_VALUES.custodes) + ((garrison.dreadnought || 0) * POWER_VALUES.dreadnought) + ((garrison.baneblade || 0) * POWER_VALUES.baneblade);
                                         return (
                                             <>
                                                 <div className="flex justify-between items-center p-4 border border-zinc-800 rounded bg-zinc-900/50">
@@ -219,7 +248,7 @@ export const SectorMap: React.FC = () => {
                                                 <div className="grid grid-cols-2 gap-3">
                                                     {[
                                                         { id: 'guardsmen', name: '帝國衛隊', type: 'guardsmen', img: '/units/guardsman.png', power: POWER_VALUES.guardsmen, count: garrison.guardsmen, reserve: armyStrength.reserves.guardsmen },
-                                                        { id: 'spaceMarines', name: '星際戰士', type: 'space_marine', img: '/units/marine.png', power: POWER_VALUES.spaceMarines, count: garrison.spaceMarines, reserve: armyStrength.reserves.spaceMarines },
+                                                        { id: 'space_marine', name: '星際戰士', type: 'space_marine', img: '/units/marine.png', power: POWER_VALUES.space_marine, count: garrison.space_marine, reserve: armyStrength.reserves.space_marine },
                                                         { id: 'custodes', name: '帝皇禁軍', type: 'custodes', img: '/units/custodes.png', power: POWER_VALUES.custodes, count: garrison.custodes, reserve: armyStrength.reserves.custodes },
                                                         { id: 'dreadnought', name: '無畏機甲', type: 'dreadnought', img: '/units/dreadnought.png', power: POWER_VALUES.dreadnought, count: garrison.dreadnought || 0, reserve: armyStrength.reserves.dreadnought },
                                                         { id: 'baneblade', name: '帝皇毒刃', type: 'baneblade', img: '/units/baneblade.png', power: POWER_VALUES.baneblade, count: garrison.baneblade || 0, reserve: armyStrength.reserves.baneblade },
