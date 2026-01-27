@@ -123,12 +123,10 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
                     return (
                         <div className="flex flex-col">
                             <span className="font-mono text-xs text-cyan-400">每日 {timeStr} 截止</span>
-                            {streak > 0 && (
-                                <div className="flex items-center gap-1 mt-0.5 animate-pulse">
-                                    <Flame size={12} className="text-orange-500 fill-orange-500" />
-                                    <span className="text-[10px] font-bold text-orange-400 font-mono">STREAK: {streak}</span>
-                                </div>
-                            )}
+                            <div className={`flex items-center gap-1 mt-0.5 ${streak > 0 ? 'animate-pulse' : 'opacity-50'}`}>
+                                <Flame size={12} className={streak > 0 ? "text-orange-500 fill-orange-500" : "text-zinc-600"} />
+                                <span className={`text-[10px] font-bold font-mono ${streak > 0 ? "text-orange-400" : "text-zinc-600"}`}>STREAK: {streak}</span>
+                            </div>
                         </div>
                     );
                 }
@@ -314,12 +312,10 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
                                             <span className="font-mono text-sm text-cyan-400">
                                                 每日 {task.dueTime || new Date(task.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                                             </span>
-                                            {(task.streak || 0) > 0 && (
-                                                <div className="flex items-center gap-1 mt-1">
-                                                    <Flame size={12} className="text-orange-500 fill-orange-500" />
-                                                    <span className="text-[10px] font-bold text-orange-400 font-mono">STREAK: {task.streak}</span>
-                                                </div>
-                                            )}
+                                            <div className={`flex items-center gap-1 mt-1 ${(task.streak || 0) > 0 ? 'animate-pulse' : 'opacity-50'}`}>
+                                                <Flame size={12} className={(task.streak || 0) > 0 ? "text-orange-500 fill-orange-500" : "text-zinc-600"} />
+                                                <span className={`text-[10px] font-bold font-mono ${(task.streak || 0) > 0 ? "text-orange-400" : "text-zinc-600"}`}>STREAK: {task.streak || 0}</span>
+                                            </div>
                                         </div>
                                     ) : (
                                         <span className={`font-mono text-sm ${isOverdue ? 'text-red-500 animate-pulse font-bold' : 'text-imperial-gold/80'}`}>

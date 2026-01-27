@@ -176,7 +176,7 @@ const MainDashboard = () => {
               className={`
                     fixed inset-y-0 left-0 z-50 w-[85%] bg-black/95 border-r border-imperial-gold/30 transform transition-transform duration-300 md:relative md:transform-none md:w-1/2 md:flex md:flex-col md:bg-black/40
                     ${isDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-                    h-[100dvh] md:h-auto
+                    h-[100dvh] md:h-auto flex flex-col
                 `}
             >
               {/* Mobile Drawer Close Button */}
