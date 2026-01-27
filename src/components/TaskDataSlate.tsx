@@ -46,17 +46,35 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
         }
 
         return filtered.sort((a, b) => {
-            const now = new Date().getTime();
-            const timeA = new Date(a.dueDate).getTime();
-            const timeB = new Date(b.dueDate).getTime();
-            const isOverdueA = timeA < now;
-            const isOverdueB = timeB < now;
+            const now = new Date();
+            const nowTime = now.getTime();
 
-            // 1. Overdue first
-            if (isOverdueA && !isOverdueB) return -1;
-            if (!isOverdueA && isOverdueB) return 1;
+            const getEffectiveDate = (t: Task) => {
+                let d = new Date(t.dueDate);
+                if (t.isRecurring && t.dueTime) {
+                    const [h, m] = t.dueTime.split(':').map(Number);
+                    d = new Date(); // Today
+                    d.setHours(h, m, 0, 0);
+                    // If time has passed today? Keep it today for "overdue" or "done" context
+                }
+                return d;
+            };
 
-            // 2. Date Ascending (Soonest first)
+            const dateA = getEffectiveDate(a);
+            const dateB = getEffectiveDate(b);
+            const timeA = dateA.getTime();
+            const timeB = dateB.getTime();
+
+            const isOverdueA = timeA < nowTime;
+            const isOverdueB = timeB < nowTime;
+
+            // 1. Completion/Status grouping? (Optional, if "New" implies "Not Done")
+            // Assuming "All Active" tasks here.
+
+            // 1. Overdue first (if strict ordering desired) - Or just native time sorting?
+            // If strictly time sorting (08:00, 10:00, 12:00), overdue naturally comes first if it's earlier in the day.
+            // But if "Tomorrow"? Simple time sort handles it.
+
             return timeA - timeB;
         });
     }, [tasks, showTodayOnly]);
