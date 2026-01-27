@@ -316,31 +316,36 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (t.id === id) {
                     if (t.isRecurring) {
                         const now = new Date();
-                        const todayStr = now.toLocaleDateString();
-                        const lastCompStr = t.lastCompletedAt ? new Date(t.lastCompletedAt).toLocaleDateString() : '';
+                        const todayStr = now.toDateString(); // "Mon Jan 27 2026"
+                        const lastCompStr = t.lastCompletedAt ? new Date(t.lastCompletedAt).toDateString() : '';
 
                         // Streak Logic
                         let newStreak = t.streak || 0;
                         let shouldReward = false;
 
                         if (lastCompStr === todayStr) {
-                            // Already done today, don't increase streak
+                            // Already done today, don't increase streak.
+                            // However, if streak is 0 for some reason, fix it to 1 if it's "Completed" today.
+                            if (newStreak === 0) newStreak = 1;
+                            const updatedFix = { ...t, streak: newStreak };
+                            if (t.streak !== newStreak) {
+                                api.updateTask(id, { streak: newStreak }).catch(console.error);
+                                return updatedFix;
+                            }
                             return t;
                         }
 
                         const yesterday = new Date();
                         yesterday.setDate(yesterday.getDate() - 1);
-                        const yesterdayStr = yesterday.toLocaleDateString();
+                        const yesterdayStr = yesterday.toDateString();
 
                         if (lastCompStr === yesterdayStr) {
                             // Consecutive day
                             newStreak += 1;
                             shouldReward = true;
-                        } else if (!t.lastCompletedAt) {
-                            // First time
-                            newStreak = 1;
                         } else {
-                            // Broken streak (missed more than 1 day)
+                            // First time OR Broken streak
+                            // If never completed, or missed a day -> Reset to 1 (Today counts as 1)
                             newStreak = 1;
                         }
 
