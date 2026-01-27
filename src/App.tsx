@@ -22,7 +22,7 @@ const { Title, Text } = Typography;
 const MainDashboard = () => {
   const {
     tasks, resources, corruption, ownedUnits, isPenitentMode,
-    addTask, updateTask, purgeTask, buyUnit, cleanseCorruption, resetGame, viewMode, allTasks
+    addTask, updateTask, purgeTask, deleteTask, buyUnit, cleanseCorruption, resetGame, viewMode, allTasks
   } = useGame();
 
   // Clock State - Moved to top to prevent conditional hook execution
@@ -197,6 +197,7 @@ const MainDashboard = () => {
                   selectedId={selectedTaskId}
                   onSelect={setSelectedTaskId}
                   onPurge={purgeTask}
+                  onDelete={deleteTask}
                   onOpenAddModal={() => {
                     setEditingTask(null);
                     setIsAddModalOpen(true);

@@ -12,6 +12,7 @@ interface TaskDataSlateProps {
     onPurge: (id: string) => void;
     onOpenAddModal?: () => void;
     onEdit?: (task: Task) => void;
+    onDelete?: (id: string) => void;
     viewMode?: 'active' | 'mandates';
     onToggleView?: (mode: 'active' | 'mandates') => void;
 }
@@ -27,7 +28,7 @@ const FACTION_ICONS: Record<Faction, React.ReactNode> = {
 };
 
 const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
-    tasks, selectedId, onSelect, onPurge, onOpenAddModal,
+    tasks, selectedId, onSelect, onPurge, onDelete, onOpenAddModal,
     onEdit, viewMode = 'active', onToggleView
 }) => {
     const [showTodayOnly, setShowTodayOnly] = React.useState(false);
@@ -175,6 +176,23 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
                                     }}
                                 >
                                     <Shield size={14} />
+                                </Button>
+                            </Tooltip>
+                        )}
+
+                        {isRecurring && onDelete && (
+                            <Tooltip title="刪除協議">
+                                <Button
+                                    size="small"
+                                    className="!bg-red-900/10 !border-red-900/30 hover:!bg-red-800 hover:!text-white !text-red-800/50 !p-1 h-7 w-7 flex items-center justify-center transition-all ml-1"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (confirm('確認刪除此每日協議？')) {
+                                            onDelete(record.id);
+                                        }
+                                    }}
+                                >
+                                    <Trash2 size={12} />
                                 </Button>
                             </Tooltip>
                         )}

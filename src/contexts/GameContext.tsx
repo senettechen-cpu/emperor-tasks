@@ -12,6 +12,7 @@ interface GameContextType {
     addTask: (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring?: boolean, dueTime?: string) => void;
     updateTask: (id: string, updates: Partial<Task>) => void;
     purgeTask: (id: string) => void;
+    deleteTask: (id: string) => void;
     buyUnit: (unitId: string, cost: number) => void;
     cleanseCorruption: () => void; // New Action
     resetGame: () => void;
@@ -399,6 +400,15 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setCorruption(prev => Math.max(0, prev - 2));
     };
 
+    const deleteTask = async (id: string) => {
+        setTasks(prev => prev.filter(t => t.id !== id));
+        try {
+            await api.deleteTask(id);
+        } catch (err) {
+            console.error("Failed to delete task", err);
+        }
+    };
+
     const buyUnit = (unitId: string, cost: number) => {
         if (resources.glory >= cost && !ownedUnits.includes(unitId)) {
             setResources(prev => ({ ...prev, glory: prev.glory - cost }));
@@ -762,7 +772,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 return lastComp !== now;
             }),
             resources, corruption, ownedUnits, isPenitentMode,
-            addTask, updateTask, purgeTask, buyUnit, cleanseCorruption, resetGame,
+            addTask, updateTask, purgeTask, deleteTask, buyUnit, cleanseCorruption, resetGame,
             radarTheme, purchaseItem,
             viewMode, setViewMode, projects, addProject,
             addSubTask, completeSubTask, deleteProject, recruitUnit,

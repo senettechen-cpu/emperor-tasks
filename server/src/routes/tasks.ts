@@ -18,7 +18,9 @@ router.get('/', async (req, res) => {
             createdAt: row.created_at,
             status: row.status,
             isRecurring: row.is_recurring,
-            lastCompletedAt: row.last_completed_at
+            lastCompletedAt: row.last_completed_at,
+            streak: row.streak,
+            dueTime: row.due_time
         }));
         res.json(tasks);
     } catch (err) {
@@ -32,9 +34,9 @@ router.post('/', async (req, res) => {
     const { id, title, faction, difficulty, dueDate, createdAt, status, isRecurring } = req.body;
     try {
         await query(
-            `INSERT INTO tasks (id, title, faction, difficulty, due_date, created_at, status, is_recurring)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [id, title, faction, difficulty, dueDate, createdAt, status, isRecurring || false]
+            `INSERT INTO tasks (id, title, faction, difficulty, due_date, created_at, status, is_recurring, streak, due_time)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            [id, title, faction, difficulty, dueDate, createdAt, status, isRecurring || false, 0, req.body.dueTime]
         );
         res.status(201).json({ message: 'Task created' });
     } catch (err) {
@@ -60,6 +62,8 @@ router.put('/:id', async (req, res) => {
     if (updates.status !== undefined) { fields.push(`status = $${idx++}`); values.push(updates.status); }
     if (updates.isRecurring !== undefined) { fields.push(`is_recurring = $${idx++}`); values.push(updates.isRecurring); }
     if (updates.lastCompletedAt !== undefined) { fields.push(`last_completed_at = $${idx++}`); values.push(updates.lastCompletedAt); }
+    if (updates.streak !== undefined) { fields.push(`streak = $${idx++}`); values.push(updates.streak); }
+    if (updates.dueTime !== undefined) { fields.push(`due_time = $${idx++}`); values.push(updates.dueTime); }
 
     if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
 
