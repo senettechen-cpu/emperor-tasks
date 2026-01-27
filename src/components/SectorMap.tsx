@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Progress, Typography, Modal, Button, Form, Input, Select, Tag, Tooltip } from 'antd';
-import { Lock, Crosshair, Star, Briefcase, Plus, Check, ChevronRight, Swords, ShieldAlert, Shield, Settings, Skull, Church as ChurchIcon, CircleDashed } from 'lucide-react';
+import { Lock, Crosshair, Star, Briefcase, Plus, Check, ChevronRight, Swords, ShieldAlert, Shield, Settings, Skull, Church as ChurchIcon, CircleDashed, Pencil, Trash2 } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
 import { Project, SubTask } from '../types';
 import { GuardsmanIcon, MarineIcon, CustodesIcon } from './ImperiumIcons';
@@ -17,13 +17,15 @@ const TRAIT_CONFIG: Record<PlanetaryTraitType, { name: string, effect: string, i
 const POWER_VALUES = { guardsmen: 50, space_marine: 300, custodes: 1500, dreadnought: 1000, baneblade: 5000 };
 
 export const SectorMap: React.FC = () => {
-    const { armyStrength, projects, addProject, addSubTask, completeSubTask, deleteProject, getTraitForMonth, deployUnit, recallUnit, currentMonth, sectorHistory, resolveSector, fortifySector, fortifiedSectors, triggerBattlefieldMiracle, resources } = useGame();
+    const { armyStrength, projects, addProject, addSubTask, completeSubTask, updateSubTask, deleteSubTask, deleteProject, getTraitForMonth, deployUnit, recallUnit, currentMonth, sectorHistory, resolveSector, fortifySector, fortifiedSectors, triggerBattlefieldMiracle, resources } = useGame();
     const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [activeTab, setActiveTab] = useState<'projects' | 'deployment'>('projects');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSimulating, setIsSimulating] = useState(false);
     const [subTaskTitle, setSubTaskTitle] = useState('');
+    const [editingSubTaskId, setEditingSubTaskId] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState('');
 
     const currentMonthIdx = currentMonth;
     const abaddonProgress = ((currentMonthIdx + 1) / 12) * 100;
@@ -310,9 +312,64 @@ export const SectorMap: React.FC = () => {
                                             <div className="p-8 border border-dashed border-zinc-800 rounded flex flex-col items-center justify-center text-zinc-600"><span className="font-mono text-xs">尚未建立目標</span></div>
                                         ) : (
                                             activeProject.subTasks.map(st => (
-                                                <div key={st.id} className={`flex items-center gap-3 p-3 rounded border transition-all ${st.completed ? 'bg-green-900/20 border-green-900/50 opacity-50' : 'bg-zinc-900 border-zinc-700'}`}>
-                                                    <div className={`w-6 h-6 rounded-full border flex items-center justify-center cursor-pointer ${st.completed ? 'bg-green-500 border-green-500 text-black' : 'border-zinc-500'}`} onClick={() => !st.completed && completeSubTask(activeProject.id, st.id)}>{st.completed && '✓'}</div>
-                                                    <span className={st.completed ? 'line-through text-green-500' : 'text-white'}>{st.title}</span>
+                                                <div key={st.id} className={`flex items-center gap-3 p-3 rounded border transition-all group ${st.completed ? 'bg-green-900/20 border-green-900/50 opacity-50' : 'bg-zinc-900 border-zinc-700'}`}>
+                                                    <div
+                                                        className={`w-6 h-6 rounded-full border flex items-center justify-center cursor-pointer flex-shrink-0 ${st.completed ? 'bg-green-500 border-green-500 text-black' : 'border-zinc-500 hover:border-imperial-gold'}`}
+                                                        onClick={() => {
+                                                            if (!st.completed) {
+                                                                Modal.confirm({
+                                                                    title: '確認目標達成',
+                                                                    content: `確認已完成戰略目標「${st.title}」？`,
+                                                                    okText: '確認', cancelText: '取消',
+                                                                    onOk: () => completeSubTask(activeProject.id, st.id)
+                                                                });
+                                                            }
+                                                        }}
+                                                    >
+                                                        {st.completed && '✓'}
+                                                    </div>
+
+                                                    {editingSubTaskId === st.id ? (
+                                                        <div className="flex-1 flex gap-2">
+                                                            <input
+                                                                value={editTitle}
+                                                                onChange={e => setEditTitle(e.target.value)}
+                                                                className="flex-1 bg-black text-white border border-imperial-gold p-1 font-mono text-sm"
+                                                                autoFocus
+                                                            />
+                                                            <Button size="small" type="primary" onClick={() => { updateSubTask(activeProject.id, st.id, editTitle); setEditingSubTaskId(null); }}>Save</Button>
+                                                            <Button size="small" onClick={() => setEditingSubTaskId(null)}>Cancel</Button>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <span className={`flex-1 ${st.completed ? 'line-through text-green-500' : 'text-white'}`}>{st.title}</span>
+                                                            {!st.completed && (
+                                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <Button
+                                                                        type="text" size="small"
+                                                                        className="!text-zinc-500 hover:!text-imperial-gold"
+                                                                        onClick={() => { setEditingSubTaskId(st.id); setEditTitle(st.title); }}
+                                                                    >
+                                                                        <Pencil size={14} />
+                                                                    </Button>
+                                                                    <Button
+                                                                        type="text" size="small"
+                                                                        className="!text-zinc-500 hover:!text-red-500"
+                                                                        onClick={() => {
+                                                                            Modal.confirm({
+                                                                                title: '刪除目標',
+                                                                                content: '確認廢棄此戰略目標？',
+                                                                                okText: '刪除', okType: 'danger', cancelText: '取消',
+                                                                                onOk: () => deleteSubTask(activeProject.id, st.id)
+                                                                            });
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 size={14} />
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}
                                                 </div>
                                             ))
                                         )}

@@ -26,6 +26,8 @@ interface GameContextType {
     addProject: (title: string, difficulty: number, month: string) => string;
     addSubTask: (projectId: string, title: string) => void;
     completeSubTask: (projectId: string, subTaskId: string) => void;
+    updateSubTask: (projectId: string, subTaskId: string, title: string) => void;
+    deleteSubTask: (projectId: string, subTaskId: string) => void;
     deleteProject: (projectId: string) => void;
 
     // Deployment Actions
@@ -489,64 +491,63 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const completeSubTask = (projectId: string, subTaskId: string) => {
+        // Optimistic Update
         setProjects(prev => prev.map(p => {
-            if (p.id === projectId) {
-                // ... (Logic same as before for parsing)
-                let gloryGained = false;
-                const updatedSubTasks = (p.subTasks || []).map(st => {
-                    if (st.id === subTaskId && !st.completed) {
-                        gloryGained = true;
-                        return { ...st, completed: true };
-                    }
-                    return st;
-                });
+            if (p.id !== projectId) return p;
 
-                if (gloryGained) {
-                    const currentMonthIdx = new Date().getMonth();
-                    const currentMonthId = `M${currentMonthIdx + 1}`;
-                    const currentTrait = getTraitForMonth(currentMonthId);
-                    const baseGlory = 50;
-                    const finalGlory = currentTrait === 'forge' ? Math.floor(baseGlory * 1.2) : baseGlory;
-
-                    setResources(res => ({ ...res, glory: res.glory + finalGlory }));
+            let gloryGained = false;
+            const updatedSubTasks = (p.subTasks || []).map(st => {
+                if (st.id === subTaskId && !st.completed) {
+                    gloryGained = true;
+                    return { ...st, completed: true };
                 }
+                return st;
+            });
 
-                // Check completion
-                const allCompleted = updatedSubTasks.length > 0 && updatedSubTasks.every(st => st.completed);
-                const isJustCompleted = allCompleted && !p.completed;
-
-                if (isJustCompleted) {
-                    const currentMonthIdx = new Date().getMonth();
-                    const currentMonthId = `M${currentMonthIdx + 1}`;
-                    const currentTrait = getTraitForMonth(currentMonthId);
-                    const isDeathWorld = currentTrait === 'death';
-                    const isForgeWorld = currentTrait === 'forge';
-                    let bonus = p.difficulty * 500;
-                    if (isDeathWorld) bonus *= 2;
-                    else if (isForgeWorld) bonus = Math.floor(bonus * 1.2);
-
-                    setResources(res => ({ ...res, glory: res.glory + bonus }));
-                }
-
-                return { ...p, subTasks: updatedSubTasks, completed: allCompleted };
-            }
-            return p;
-        }));
-
-
-        // Send update to API (We need to find the project again or calc state? Optimistic set above is complex).
-        // For simplicity, let's recalculate the specific project update to send to API
-        const project = projects.find(p => p.id === projectId);
-        if (project) {
-            let updatedSubTasks = (project.subTasks || []).map(st => st.id === subTaskId ? { ...st, completed: true } : st);
-            // Check if all completed
             const allCompleted = updatedSubTasks.length > 0 && updatedSubTasks.every(st => st.completed);
+            const isJustCompleted = allCompleted && !p.completed;
 
-            api.updateProject(projectId, {
-                subTasks: updatedSubTasks,
-                completed: allCompleted
-            }).catch(err => console.error("Failed to update project completion", err));
-        }
+            if (gloryGained) {
+                // Base Subtask Glory
+                setResources(res => ({ ...res, glory: res.glory + 50 }));
+            }
+
+            if (isJustCompleted) {
+                const currentMonthIdx = new Date().getMonth();
+                const currentMonthId = `M${currentMonthIdx + 1}`;
+                const currentTrait = getTraitForMonth(currentMonthId);
+                const isDeathWorld = currentTrait === 'death';
+                const isForgeWorld = currentTrait === 'forge';
+                let bonus = p.difficulty * 500;
+                if (isDeathWorld) bonus *= 2;
+                else if (isForgeWorld) bonus = Math.floor(bonus * 1.2);
+
+                setResources(res => ({ ...res, glory: res.glory + bonus }));
+            }
+
+            // API Sync
+            api.updateProject(p.id, { subTasks: updatedSubTasks, completed: allCompleted || p.completed }).catch(err => console.error(err));
+
+            return { ...p, subTasks: updatedSubTasks, completed: allCompleted || p.completed };
+        }));
+    };
+
+    const updateSubTask = (projectId: string, subTaskId: string, title: string) => {
+        setProjects(prev => prev.map(p => {
+            if (p.id !== projectId) return p;
+            const newSubTasks = p.subTasks.map(t => t.id === subTaskId ? { ...t, title } : t);
+            api.updateProject(p.id, { subTasks: newSubTasks }).catch(console.error);
+            return { ...p, subTasks: newSubTasks };
+        }));
+    };
+
+    const deleteSubTask = (projectId: string, subTaskId: string) => {
+        setProjects(prev => prev.map(p => {
+            if (p.id !== projectId) return p;
+            const newSubTasks = p.subTasks.filter(t => t.id !== subTaskId);
+            api.updateProject(p.id, { subTasks: newSubTasks }).catch(console.error);
+            return { ...p, subTasks: newSubTasks };
+        }));
     };
 
     const deleteProject = (projectId: string) => {
@@ -775,7 +776,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             addTask, updateTask, purgeTask, deleteTask, buyUnit, cleanseCorruption, resetGame,
             radarTheme, purchaseItem,
             viewMode, setViewMode, projects, addProject,
-            addSubTask, completeSubTask, deleteProject, recruitUnit,
+            addSubTask, completeSubTask, updateSubTask, deleteSubTask, deleteProject, recruitUnit,
             deployUnit, recallUnit,
             armyStrength,
             getTraitForMonth, exportSTC, importSTC,

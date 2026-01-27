@@ -44,11 +44,11 @@ export const OrbitalRadar: React.FC<OrbitalRadarProps> = ({ tasks, onSelectKey, 
 
             // 邏輯：越近越急 (r 越小)
             // 過期: r=5-10%, <1hr: r=15%, <24hr: spread 20-80%, >24hr: 90%
-            let distance = 90;
+            let distance = 82; // Clamped from 90 to prevent overflow
             if (hoursRemaining <= 0) distance = Math.random() * 5 + 5;
             else if (hoursRemaining < 1) distance = 15;
-            else if (hoursRemaining < 24) distance = 20 + (hoursRemaining / 24) * 60;
-            else distance = 90;
+            else if (hoursRemaining < 24) distance = 20 + (hoursRemaining / 24) * 55; // Max ~75
+            else distance = 82;
 
             // 2. 計算角度 (Angle) - 分散避免重疊 + 勢力分區
             // 為了視覺混亂美學，我們主要使用 hash 或隨機分佈，但稍微群聚
