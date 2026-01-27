@@ -6,6 +6,7 @@ import { Pool } from 'pg';
 import taskRoutes from './routes/tasks';
 import gameStateRoutes from './routes/gameState';
 import projectRoutes from './routes/projects';
+import './db/init'; // Initialize DB and run migrations
 
 dotenv.config();
 
