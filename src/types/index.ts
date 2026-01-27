@@ -10,6 +10,8 @@ export interface Task {
     status: 'active' | 'completed' | 'failed';
     isRecurring?: boolean; // 每日固定任務
     lastCompletedAt?: Date; // 上次完成日期
+    streak?: number; // 連續達成次數
+    dueTime?: string; // 每日截止時間 "HH:mm"
 }
 
 export interface Resources {

@@ -36,7 +36,7 @@ export const OrbitalRadar: React.FC<OrbitalRadarProps> = ({ tasks, onSelectKey, 
 
     // 核心計算：將 Task 轉換為雷達上的座標
     const blips = useMemo(() => {
-        return tasks.map(task => {
+        return tasks.filter(t => !t.isRecurring).map(task => {
             // 1. 計算距離 (Distance from Center)
             const now = new Date().getTime();
             const due = new Date(task.dueDate).getTime();

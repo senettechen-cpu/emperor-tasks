@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Table, Button, Tag, Tooltip } from 'antd';
-import { Shield, Trash2, Target, Sword, Activity, Plus, FileEdit } from 'lucide-react';
+import { Shield, Trash2, Target, Sword, Activity, Plus, FileEdit, Flame } from 'lucide-react';
 import { Task, Faction } from '../types';
 
 // Removed Text destructured from Typography to prevent accidental usage
@@ -113,8 +113,26 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
             dataIndex: 'dueDate',
             key: 'dueDate',
             width: 150,
-            render: (date: Date) => {
+            render: (date: Date, record: Task) => {
                 const isOverdue = new Date(date) < new Date();
+
+                if (record.isRecurring) {
+                    const timeStr = record.dueTime || new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                    const streak = record.streak || 0;
+
+                    return (
+                        <div className="flex flex-col">
+                            <span className="font-mono text-xs text-cyan-400">每日 {timeStr} 截止</span>
+                            {streak > 0 && (
+                                <div className="flex items-center gap-1 mt-0.5 animate-pulse">
+                                    <Flame size={12} className="text-orange-500 fill-orange-500" />
+                                    <span className="text-[10px] font-bold text-orange-400 font-mono">STREAK: {streak}</span>
+                                </div>
+                            )}
+                        </div>
+                    );
+                }
+
                 return <span className={`font-mono text-xs ${isOverdue ? 'text-red-500 animate-pulse font-bold' : 'text-imperial-gold/60'}`}><span>{new Date(date).toLocaleString()}</span></span>;
             }
         },
@@ -291,9 +309,23 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
                             <div className="flex justify-between items-end mt-4">
                                 <div className="flex flex-col">
                                     <span className="text-[10px] text-zinc-500 font-mono">DEADLINE</span>
-                                    <span className={`font-mono text-sm ${isOverdue ? 'text-red-500 animate-pulse font-bold' : 'text-imperial-gold/80'}`}>
-                                        {new Date(task.dueDate).toLocaleString()}
-                                    </span>
+                                    {task.isRecurring ? (
+                                        <div className="flex flex-col">
+                                            <span className="font-mono text-sm text-cyan-400">
+                                                每日 {task.dueTime || new Date(task.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                            </span>
+                                            {(task.streak || 0) > 0 && (
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <Flame size={12} className="text-orange-500 fill-orange-500" />
+                                                    <span className="text-[10px] font-bold text-orange-400 font-mono">STREAK: {task.streak}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <span className={`font-mono text-sm ${isOverdue ? 'text-red-500 animate-pulse font-bold' : 'text-imperial-gold/80'}`}>
+                                            {new Date(task.dueDate).toLocaleString()}
+                                        </span>
+                                    )}
                                 </div>
 
                                 <div className="flex gap-2">

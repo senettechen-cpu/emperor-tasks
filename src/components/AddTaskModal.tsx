@@ -10,7 +10,7 @@ const { Option } = Select;
 interface AddTaskModalProps {
     visible: boolean;
     onClose: () => void;
-    onAdd: (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring: boolean) => void;
+    onAdd: (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring: boolean, dueTime?: string) => void;
     initialKeyword?: string;
     initialTask?: Task | null;
 }
@@ -68,7 +68,8 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
 
     const handleSubmit = () => {
         if (!title.trim()) return;
-        onAdd(title, faction, difficulty, dueDate.toDate(), isRecurring);
+        const dueTime = isRecurring ? dueDate.format('HH:mm') : undefined;
+        onAdd(title, faction, difficulty, dueDate.toDate(), isRecurring, dueTime);
         setTitle('');
         setIsRecurring(false);
         onClose();

@@ -313,11 +313,11 @@ const MainDashboard = () => {
           setEditingTask(null);
           setKeyword('');
         }}
-        onAdd={(title, faction, diff, date, isRec) => {
+        onAdd={(title, faction, diff, date, isRec, dueTime) => {
           if (editingTask) {
-            updateTask(editingTask.id, { title, faction, difficulty: diff, dueDate: date, isRecurring: isRec });
+            updateTask(editingTask.id, { title, faction, difficulty: diff, dueDate: date, isRecurring: isRec, dueTime });
           } else {
-            addTask(title, faction, diff, date, isRec);
+            addTask(title, faction, diff, date, isRec, dueTime);
           }
         }}
         initialKeyword={keyword}

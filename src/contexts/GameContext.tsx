@@ -9,7 +9,7 @@ interface GameContextType {
     corruption: number;
     ownedUnits: string[];
     isPenitentMode: boolean;
-    addTask: (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring?: boolean) => void;
+    addTask: (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring?: boolean, dueTime?: string) => void;
     updateTask: (id: string, updates: Partial<Task>) => void;
     purgeTask: (id: string) => void;
     buyUnit: (unitId: string, cost: number) => void;
@@ -183,7 +183,18 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 // For recurring tasks, they are "active" if not completed today
                 if (t.isRecurring) {
                     const lastCompStr = t.lastCompletedAt ? new Date(t.lastCompletedAt).toLocaleDateString() : '';
-                    return lastCompStr !== todayStr && t.dueDate < now;
+                    // If completed today, not overdue.
+                    if (lastCompStr === todayStr) return false;
+
+                    // Check dueTime
+                    let deadline = new Date(t.dueDate); // Default fallback
+                    if (t.dueTime) {
+                        const [hours, minutes] = t.dueTime.split(':').map(Number);
+                        deadline = new Date();
+                        deadline.setHours(hours, minutes, 0, 0);
+                    }
+
+                    return deadline < now;
                 }
 
                 return t.dueDate < now;
@@ -257,7 +268,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [corruption]);
 
     // Actions
-    const addTask = async (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring: boolean = false) => {
+    const addTask = async (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring: boolean = false, dueTime?: string) => {
         const newTask: Task = {
             id: Date.now().toString(36) + Math.random().toString(36).substr(2),
             title,
@@ -266,7 +277,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             dueDate,
             createdAt: new Date(),
             status: 'active',
-            isRecurring
+            isRecurring,
+            streak: 0,
+            dueTime
         };
 
         // Optimistic Update
@@ -302,8 +315,55 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return prev.map(t => {
                 if (t.id === id) {
                     if (t.isRecurring) {
-                        const updated = { ...t, lastCompletedAt: new Date(), status: 'active' as const };
-                        api.updateTask(id, { lastCompletedAt: updated.lastCompletedAt, status: 'active' }).catch(e => console.error(e));
+                        const now = new Date();
+                        const todayStr = now.toLocaleDateString();
+                        const lastCompStr = t.lastCompletedAt ? new Date(t.lastCompletedAt).toLocaleDateString() : '';
+
+                        // Streak Logic
+                        let newStreak = t.streak || 0;
+                        let shouldReward = false;
+
+                        if (lastCompStr === todayStr) {
+                            // Already done today, don't increase streak
+                            return t;
+                        }
+
+                        const yesterday = new Date();
+                        yesterday.setDate(yesterday.getDate() - 1);
+                        const yesterdayStr = yesterday.toLocaleDateString();
+
+                        if (lastCompStr === yesterdayStr) {
+                            // Consecutive day
+                            newStreak += 1;
+                            shouldReward = true;
+                        } else if (!t.lastCompletedAt) {
+                            // First time
+                            newStreak = 1;
+                        } else {
+                            // Broken streak (missed more than 1 day)
+                            newStreak = 1;
+                        }
+
+                        // Milestone Rewards (Check ONLY if we just incremented)
+                        // Note: Logic allows only 1 reward per day per task
+                        if (shouldReward || newStreak === 1) { // Check rewards on increment or fresh start? Usually streaks reward on increment.
+                            const streakRewards = {
+                                7: { glory: 50, rp: 20, msg: "Weekly Discipline Bonus!" },
+                                14: { glory: 150, rp: 50, msg: "Fortnight of Iron Will!" },
+                                21: { glory: 300, rp: 75, msg: "Tricenary of Faith!" }, // 21 days
+                                30: { glory: 500, rp: 100, msg: "Month of The Emperor's Grace!" }
+                            };
+                            // @ts-ignore
+                            const reward = streakRewards[newStreak];
+                            if (reward) {
+                                setResources(res => ({ ...res, glory: res.glory + reward.glory, rp: res.rp + reward.rp }));
+                                console.log(reward.msg); // Could trigger a toast notification here if we had one
+                                // Ideally we pass this msg to UI. For now, resources update is enough.
+                            }
+                        }
+
+                        const updated = { ...t, lastCompletedAt: new Date(), status: 'active' as const, streak: newStreak };
+                        api.updateTask(id, { lastCompletedAt: updated.lastCompletedAt, status: 'active', streak: newStreak }).catch(e => console.error(e));
                         return updated;
                     }
                     api.updateTask(id, { status: 'completed' }).catch(e => console.error(e));
@@ -316,7 +376,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
         });
 
-        // Reward Logic
+        // Reward Logic (Standard Per Task Reward)
         let rpReward = 10;
         if (activeTacticalScan) {
             const task = tasks.find(t => t.id === id);
