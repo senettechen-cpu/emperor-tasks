@@ -22,7 +22,9 @@ const schemaSql = `
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         status TEXT NOT NULL,
         is_recurring BOOLEAN DEFAULT FALSE,
-        last_completed_at TIMESTAMP WITH TIME ZONE
+        last_completed_at TIMESTAMP WITH TIME ZONE,
+        streak INTEGER DEFAULT 0,
+        due_time TEXT
     );
 
     -- Projects Table
@@ -55,6 +57,11 @@ const initDb = async () => {
 
         await pool.query(schemaSql);
         console.log('Schema created successfully.');
+
+        // Migrations: Add new columns if they don't exist (for existing DBs)
+        await pool.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS streak INTEGER DEFAULT 0');
+        await pool.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_time TEXT');
+        console.log('Migrations applied.');
 
         // Initialize default game state if not exists
         const checkState = await pool.query('SELECT * FROM game_state WHERE id = $1', ['global']);
