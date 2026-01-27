@@ -51,11 +51,19 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
 
             const getEffectiveDate = (t: Task) => {
                 let d = new Date(t.dueDate);
-                if (t.isRecurring && t.dueTime) {
-                    const [h, m] = t.dueTime.split(':').map(Number);
-                    d = new Date(); // Today
+                if (t.isRecurring) {
+                    d = new Date(); // Always normalize recurring to Today
+                    let h = 0, m = 0;
+
+                    if (t.dueTime) {
+                        [h, m] = t.dueTime.split(':').map(Number);
+                    } else {
+                        // Fallback to original due date time
+                        const original = new Date(t.dueDate);
+                        h = original.getHours();
+                        m = original.getMinutes();
+                    }
                     d.setHours(h, m, 0, 0);
-                    // If time has passed today? Keep it today for "overdue" or "done" context
                 }
                 return d;
             };
