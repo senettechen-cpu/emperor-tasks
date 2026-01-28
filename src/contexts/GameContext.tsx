@@ -314,6 +314,22 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const purgeTask = async (id: string) => {
         // Optimistic
+        const taskToPurge = tasks.find(t => t.id === id);
+        if (taskToPurge && taskToPurge.isRecurring) {
+            const now = new Date();
+            let deadline = new Date(taskToPurge.dueDate);
+            if (taskToPurge.dueTime) {
+                const [hours, minutes] = taskToPurge.dueTime.split(':').map(Number);
+                deadline = new Date();
+                deadline.setHours(hours, minutes, 0, 0);
+            }
+            // If strictly overdue (now > deadline), reject interaction
+            if (now > deadline) {
+                console.warn("Task is overdue and cannot be purged.");
+                return;
+            }
+        }
+
         setTasks(prev => {
             return prev.map(t => {
                 if (t.id === id) {

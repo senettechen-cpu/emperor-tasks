@@ -191,20 +191,43 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
                             <Tag color="green" className="!bg-green-900/20 !border-green-500/50 !text-green-500 font-mono text-[10px] m-0 px-2 py-0.5 animate-pulse">
                                 COMPLETED
                             </Tag>
-                        ) : (
-                            <Tooltip title="執行淨化">
-                                <Button
-                                    size="small"
-                                    className="!bg-green-900/20 !border-green-500/50 hover:!bg-green-500 hover:!text-black !text-green-500 !p-1 h-7 w-7 flex items-center justify-center transition-all"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onPurge(record.id);
-                                    }}
-                                >
-                                    <Shield size={14} />
-                                </Button>
-                            </Tooltip>
-                        )}
+                        ) : (() => {
+                            // Inline Overdue Check for Recurring
+                            let isOverdue = false;
+                            if (isRecurring) {
+                                const now = new Date();
+                                let deadline = new Date(record.dueDate);
+                                if (record.dueTime) {
+                                    const [h, m] = record.dueTime.split(':').map(Number);
+                                    deadline = new Date();
+                                    deadline.setHours(h, m, 0, 0);
+                                }
+                                isOverdue = now > deadline;
+                            }
+
+                            if (isOverdue) {
+                                return (
+                                    <Tag color="red" className="!bg-red-900/20 !border-red-500/50 !text-red-500 font-mono text-[10px] m-0 px-2 py-0.5">
+                                        EXPIRED
+                                    </Tag>
+                                );
+                            }
+
+                            return (
+                                <Tooltip title="執行淨化">
+                                    <Button
+                                        size="small"
+                                        className="!bg-green-900/20 !border-green-500/50 hover:!bg-green-500 hover:!text-black !text-green-500 !p-1 h-7 w-7 flex items-center justify-center transition-all"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onPurge(record.id);
+                                        }}
+                                    >
+                                        <Shield size={14} />
+                                    </Button>
+                                </Tooltip>
+                            );
+                        })()}
 
                         {isRecurring && onDelete && (
                             <Tooltip title="刪除協議">
@@ -387,19 +410,42 @@ const TaskDataSlate: React.FC<TaskDataSlateProps> = ({
                                         <Tag color="green" className="!bg-green-900/20 !border-green-500/50 !text-green-500 font-mono text-xs m-0 px-3 py-1 flex items-center animate-pulse">
                                             COMPLETED
                                         </Tag>
-                                    ) : (
-                                        <Button
-                                            size="middle"
-                                            className="!bg-green-600 !border-green-500 !text-white !h-10 !px-4 flex items-center gap-2 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onPurge(task.id);
-                                            }}
-                                        >
-                                            <Shield size={18} />
-                                            <span className="font-bold tracking-widest text-xs">淨化</span>
-                                        </Button>
-                                    )}
+                                    ) : (() => {
+                                        // Mobile View Overdue Check
+                                        let isOverdue = false;
+                                        if (task.isRecurring) {
+                                            const now = new Date();
+                                            let deadline = new Date(task.dueDate);
+                                            if (task.dueTime) {
+                                                const [h, m] = task.dueTime.split(':').map(Number);
+                                                deadline = new Date();
+                                                deadline.setHours(h, m, 0, 0);
+                                            }
+                                            isOverdue = now > deadline;
+                                        }
+
+                                        if (isOverdue) {
+                                            return (
+                                                <div className="px-4 py-2 border border-red-500/50 bg-red-900/20 text-red-500 text-xs font-mono font-bold tracking-widest">
+                                                    EXPIRED / MISSED
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <Button
+                                                size="middle"
+                                                className="!bg-green-600 !border-green-500 !text-white !h-10 !px-4 flex items-center gap-2 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onPurge(task.id);
+                                                }}
+                                            >
+                                                <Shield size={18} />
+                                                <span className="font-bold tracking-widest text-xs">淨化</span>
+                                            </Button>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>
