@@ -45,7 +45,7 @@ const RECRUITMENT_UNITS = [
     {
         id: 'guardsmen',
         name: '帝國衛隊 (Imperial Guard)',
-        cost: 100,
+        cost: 300,
         power: 50,
         desc: '數量就是力量。',
         icon: <img src="/units/guardsman.png" alt="Guardsman" className="w-16 h-16 object-cover border border-zinc-700 rounded" />
@@ -53,7 +53,7 @@ const RECRUITMENT_UNITS = [
     {
         id: 'space_marine',
         name: '阿斯塔特修士 (Space Marine)',
-        cost: 500,
+        cost: 1500,
         power: 300,
         desc: '帝皇的死亡天使。',
         icon: <img src="/units/marine.png" alt="Space Marine" className="w-16 h-16 object-cover border border-imperial-gold rounded" />
@@ -61,7 +61,7 @@ const RECRUITMENT_UNITS = [
     {
         id: 'custodes',
         name: '禁軍 (Custodes)',
-        cost: 2000,
+        cost: 4500,
         power: 1500,
         desc: '萬中選一的守護者。',
         icon: <img src="/units/custodes.png" alt="Custodes" className="w-16 h-16 object-cover border border-yellow-400 rounded shadow-[0_0_10px_rgba(250,204,21,0.5)]" />

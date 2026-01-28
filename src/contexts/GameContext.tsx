@@ -556,7 +556,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const recruitUnit = (type: UnitType) => {
-        const COSTS = { guardsmen: 10, space_marine: 50, custodes: 1000, dreadnought: 100, baneblade: 2000 };
+        const COSTS = { guardsmen: 300, space_marine: 1500, custodes: 4500, dreadnought: 100, baneblade: 2000 };
         let cost = COSTS[type];
 
         const currentMonthIdx = new Date().getMonth();
