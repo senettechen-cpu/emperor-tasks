@@ -26,6 +26,9 @@ app.use('/api/game-state', verifyToken, gameStateRoutes);
 app.use('/api/projects', verifyToken, projectRoutes);
 app.use('/api/migration', verifyToken, migrationRoutes);
 
+import authRoutes from './routes/auth';
+app.use('/api/auth', authRoutes); // Public route for login
+
 // Database connection
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,

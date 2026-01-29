@@ -15,6 +15,7 @@ import TaskDataSlate from './components/TaskDataSlate' // Added
 import { GameProvider, useGame } from './contexts/GameContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useAuth } from './contexts/AuthContext'
+import { LineCallback } from './pages/LineCallback'
 import './App.css'
 
 const { Title, Text } = Typography;
@@ -34,9 +35,25 @@ const LoginScreen = ({ onLogin }: { onLogin: () => void }) => (
         type="primary"
         size="large"
         onClick={onLogin}
-        className="w-full !h-14 !bg-imperial-gold !text-black !font-bold !tracking-widest !text-lg hover:!bg-white transition-all flex items-center justify-center gap-2"
+        className="w-full !h-14 !bg-imperial-gold !text-black !font-bold !tracking-widest !text-lg hover:!bg-white transition-all flex items-center justify-center gap-2 mb-4"
       >
         <span className="uppercase">啟動 Google 識別協定</span>
+      </Button>
+
+      <Button
+        type="default"
+        size="large"
+        className="w-full !h-14 !border-imperial-gold !text-imperial-gold !font-bold !tracking-widest !text-lg hover:!bg-imperial-gold hover:!text-black transition-all flex items-center justify-center gap-2 !bg-transparent"
+        onClick={() => {
+          // LINE Login Redirect
+          const clientId = '2009004081'; // Should match .env
+          const redirectUri = window.location.origin + '/line-callback';
+          const state = Math.random().toString(36).substring(7); // Simple state
+          const lineAuthUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=profile%20openid`;
+          window.location.href = lineAuthUrl;
+        }}
+      >
+        <span className="uppercase">啟動 LINE 連結協定</span>
       </Button>
 
       <div className="mt-8 text-zinc-600 font-mono text-xs">
@@ -85,6 +102,12 @@ const AppContent = () => {
       });
     }
   }, [user]);
+
+  // Simple routing for callback
+  const path = window.location.pathname;
+  if (path === '/line-callback') {
+    return <LineCallback />;
+  }
 
   if (!user) {
     return <LoginScreen onLogin={loginWithGoogle} />;

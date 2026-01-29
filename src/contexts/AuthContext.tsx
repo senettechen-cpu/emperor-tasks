@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { User, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, signInWithCustomToken } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
 interface AuthContextType {
     user: User | null;
     loading: boolean;
     loginWithGoogle: () => Promise<void>;
+    loginWithCustomToken: (token: string) => Promise<void>;
     logout: () => Promise<void>;
     getToken: () => Promise<string | null>;
 }
@@ -34,6 +35,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const loginWithCustomToken = async (token: string) => {
+        try {
+            await signInWithCustomToken(auth, token);
+        } catch (error) {
+            console.error("Custom Token Login failed:", error);
+            throw error;
+        }
+    };
+
     const logout = async () => {
         try {
             await signOut(auth);
@@ -48,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout, getToken }}>
+        <AuthContext.Provider value={{ user, loading, loginWithGoogle, loginWithCustomToken, logout, getToken }}>
             {children}
         </AuthContext.Provider>
     );
