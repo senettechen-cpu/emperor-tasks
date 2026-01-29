@@ -1,7 +1,8 @@
 
 import { Task, Project, ArmyStrength, SectorHistory, Resources } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const RAW_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const BASE_URL = RAW_URL.replace(/\/api\/?$/, '').replace(/\/+$/, '');
 const API_URL = `${BASE_URL}/api`;
 
 const getHeaders = (token?: string) => {

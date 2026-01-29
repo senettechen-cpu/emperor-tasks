@@ -57,21 +57,30 @@ const AppContent = () => {
     if (user) {
       setIsMigrating(true);
       getToken().then(token => {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-        fetch(`${apiUrl}/api/migration/claim`, {
+        // Normalize URL: Remove trailing /api or / if present to default to base
+        const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const baseUrl = rawUrl.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+
+        fetch(`${baseUrl}/api/migration/claim`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
           }
         })
-          .then(res => res.json())
+          .then(res => {
+            if (res.ok) return res.json();
+            throw new Error('Migration endpoint error');
+          })
           .then(data => {
             if (data.message === 'Legacy data claimed successfully') {
               console.log('Legacy data migration:', data);
+              // Reload to fetch fresh data
               window.location.reload();
+            } else {
+              console.log('No legacy data to claim or already claimed.');
             }
           })
-          .catch(err => console.error('Migration failed:', err))
+          .catch(err => console.error('Migration check failed (This is expected if no legacy data exists):', err))
           .finally(() => setIsMigrating(false));
       });
     }
