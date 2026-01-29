@@ -16,6 +16,7 @@ import { GameProvider, useGame } from './contexts/GameContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useAuth } from './contexts/AuthContext'
 import { LineCallback } from './pages/LineCallback'
+import { AdminDashboard } from './pages/AdminDashboard'
 import './App.css'
 
 const { Title, Text } = Typography;
@@ -107,6 +108,14 @@ const AppContent = () => {
   const path = window.location.pathname;
   if (path === '/line-callback') {
     return <LineCallback />;
+  }
+
+  if (path === '/admin') {
+    return (
+      <GameProvider>
+        <AdminDashboard />
+      </GameProvider>
+    );
   }
 
   if (!user) {
