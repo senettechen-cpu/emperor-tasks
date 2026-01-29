@@ -31,7 +31,8 @@ const MainDashboard = () => {
   useEffect(() => {
     if (user) {
       getToken().then(token => {
-        fetch('http://localhost:3001/api/migration/claim', {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        fetch(`${apiUrl}/api/migration/claim`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
