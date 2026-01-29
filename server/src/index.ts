@@ -16,9 +16,15 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-app.use('/api/tasks', taskRoutes);
-app.use('/api/game-state', gameStateRoutes);
-app.use('/api/projects', projectRoutes);
+import { verifyToken } from './middleware/auth';
+
+import migrationRoutes from './routes/migration';
+
+// Apply auth middleware to all API routes
+app.use('/api/tasks', verifyToken, taskRoutes);
+app.use('/api/game-state', verifyToken, gameStateRoutes);
+app.use('/api/projects', verifyToken, projectRoutes);
+app.use('/api/migration', verifyToken, migrationRoutes);
 
 // Database connection
 const pool = new Pool({

@@ -7,7 +7,10 @@ const router = Router();
 // GET all projects
 router.get('/', async (req, res) => {
     try {
-        const result = await query('SELECT * FROM projects');
+        const userId = req.user?.uid;
+        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+        const result = await query('SELECT * FROM projects WHERE user_id = $1', [userId]);
         const projects = result.rows.map(row => ({
             id: row.id,
             title: row.title,
@@ -27,9 +30,12 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     const { id, title, month, difficulty, completed, subTasks } = req.body;
     try {
+        const userId = req.user?.uid;
+        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
         await query(
-            'INSERT INTO projects (id, title, month, difficulty, completed, sub_tasks) VALUES ($1, $2, $3, $4, $5, $6)',
-            [id, title, month, difficulty, completed || false, JSON.stringify(subTasks || [])]
+            'INSERT INTO projects (id, title, month, difficulty, completed, sub_tasks, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            [id, title, month, difficulty, completed || false, JSON.stringify(subTasks || []), userId]
         );
         res.status(201).json({ message: 'Project created' });
     } catch (err) {
@@ -57,7 +63,8 @@ router.put('/:id', async (req, res) => {
     if (fields.length === 0) return res.status(400).json({ message: 'No updates provided' });
 
     values.push(id);
-    const sql = `UPDATE projects SET ${fields.join(', ')} WHERE id = $${idx}`;
+    values.push(req.user?.uid);
+    const sql = `UPDATE projects SET ${fields.join(', ')} WHERE id = $${idx} AND user_id = $${idx + 1}`;
 
     try {
         await query(sql, values);
@@ -72,7 +79,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        await query('DELETE FROM projects WHERE id = $1', [id]);
+        await query('DELETE FROM projects WHERE id = $1 AND user_id = $2', [id, req.user?.uid]);
         res.json({ message: 'Project deleted' });
     } catch (err) {
         console.error('Error deleting project:', err);

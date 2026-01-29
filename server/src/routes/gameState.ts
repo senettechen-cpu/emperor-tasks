@@ -7,11 +7,27 @@ const router = Router();
 // GET game state
 router.get('/', async (req, res) => {
     try {
-        const result = await query('SELECT * FROM game_state WHERE id = $1', ['global']);
+        const userId = req.user?.uid;
+        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+        const result = await query('SELECT * FROM game_state WHERE user_id = $1', [userId]);
+
+        let row;
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Game state not found' });
+            // If no state exists for user, return default state (don't error out)
+            row = {
+                id: 'new',
+                resources: { rp: 0, glory: 0 },
+                corruption: 0,
+                current_month: 0,
+                is_penitent_mode: false,
+                army_strength: { reserves: { guardsmen: 0, spaceMarines: 0, custodes: 0, dreadnought: 0, baneblade: 0 }, garrisons: {}, totalActivePower: 0 },
+                sector_history: {},
+                owned_units: []
+            };
+        } else {
+            row = result.rows[0];
         }
-        const row = result.rows[0];
         // CamelCase conversion
         const gameState = {
             id: row.id,
@@ -51,16 +67,37 @@ router.post('/', async (req, res) => {
 
     if (fields.length === 0) return res.status(400).json({ message: 'No data to sync' });
 
-    values.push('global');
-    const sql = `UPDATE game_state SET ${fields.join(', ')} WHERE id = $${idx}`;
+    const userId = req.user?.uid;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    try {
-        await query(sql, values);
-        res.json({ message: 'Game state synced' });
-    } catch (err) {
-        console.error('Error syncing game state:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+    // Check if row exists first
+    const check = await query('SELECT id FROM game_state WHERE user_id = $1', [userId]);
+
+    if (check.rows.length === 0) {
+        // Create new row
+        const newId = userId; // or uuid
+        // Construct insert
+        // ... simplified for now, assuming frontend sends full state or we merge manually. 
+        // Actually, for MVP let's just INSERT default + updates.
+        // But the sync logic above builds a dynamic UPDATE.
+
+        // Strategy: If not exists, INSERT. If exists, UPDATE.
+        // Since the dynamic update logic is complex, let's handle the INSERT case simply:
+        await query(
+            'INSERT INTO game_state (id, user_id, resources, corruption, current_month, is_penitent_mode, army_strength, sector_history, owned_units) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+            [userId, userId, state.resources || {}, state.corruption || 0, state.currentMonth || 0, state.isPenitentMode || false, state.armyStrength || {}, state.sectorHistory || {}, state.ownedUnits || []]
+        );
+        return res.json({ message: 'Game state created' });
     }
+
+    values.push(userId);
+    const sql = `UPDATE game_state SET ${fields.join(', ')} WHERE user_id = $${idx}`;
+    await query(sql, values);
+    res.json({ message: 'Game state synced' });
+} catch (err) {
+    console.error('Error syncing game state:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+}
 });
 
 export default router;

@@ -14,6 +14,7 @@ import { SectorMap } from './components/SectorMap'
 import TaskDataSlate from './components/TaskDataSlate' // Added
 import { GameProvider, useGame } from './contexts/GameContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { useAuth } from './contexts/AuthContext'
 import './App.css'
 
 const { Title, Text } = Typography;
@@ -24,6 +25,30 @@ const MainDashboard = () => {
     tasks, resources, corruption, ownedUnits, isPenitentMode,
     addTask, updateTask, purgeTask, deleteTask, buyUnit, cleanseCorruption, resetGame, viewMode, allTasks
   } = useGame();
+  const { user, loginWithGoogle, logout, getToken } = useAuth();
+
+  // Auto-claim legacy data on login
+  useEffect(() => {
+    if (user) {
+      getToken().then(token => {
+        fetch('http://localhost:3001/api/migration/claim', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.message === 'Legacy data claimed successfully') {
+              console.log('Legacy data migration:', data);
+              // Reload game data
+              window.location.reload();
+            }
+          })
+          .catch(err => console.error('Migration failed:', err));
+      });
+    }
+  }, [user]);
 
   // Clock State - Moved to top to prevent conditional hook execution
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -60,6 +85,36 @@ const MainDashboard = () => {
       setIsAddModalOpen(true);
     }
   };
+
+
+
+  if (!user) {
+    return (
+      <div className="h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="scanline" />
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1635322966219-b75ed3a90e27?q=80&w=2000&auto=format&fit=crop')] opacity-20 bg-cover bg-center" />
+
+        <div className="z-10 border border-imperial-gold/30 bg-black/80 p-12 backdrop-blur-md max-w-md w-full text-center shadow-[0_0_50px_rgba(251,191,36,0.1)]">
+          <h1 className="text-imperial-gold text-4xl font-mono mb-2 tracking-widest">帝國邏輯引擎</h1>
+          <h2 className="text-zinc-500 text-sm tracking-[0.5em] mb-12">機密存取 // 僅限授權人員</h2>
+
+          <Button
+            type="primary"
+            size="large"
+            onClick={loginWithGoogle}
+            className="w-full !h-14 !bg-imperial-gold !text-black !font-bold !tracking-widest !text-lg hover:!bg-white transition-all flex items-center justify-center gap-2"
+          >
+            <span className="uppercase">啟動 Google 識別協定</span>
+          </Button>
+
+          <div className="mt-8 text-zinc-600 font-mono text-xs">
+            <p>每日箴言：</p>
+            <p>「開放的心靈就像一座大門敞開且無人看守的堡壘。」</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isPenitentMode) {
     return (
@@ -161,6 +216,16 @@ const MainDashboard = () => {
               </div>
             </div>
           </div>
+          {user && (
+            <Button
+              ghost
+              danger
+              className="!border-red-900 !text-red-700 hover:!bg-red-900/20 font-mono"
+              onClick={(e) => { e.stopPropagation(); logout(); }}
+            >
+              TERMINATE SESSION
+            </Button>
+          )}
           <div className="text-right">
             <span className="block text-white/50 text-xs tracking-wider">榮耀值 (GLORY)</span>
             <span className="text-white device-font text-2xl">{resources.glory}</span>

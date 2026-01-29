@@ -61,6 +61,17 @@ const initDb = async () => {
         // Migrations: Add new columns if they don't exist (for existing DBs)
         await pool.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS streak INTEGER DEFAULT 0');
         await pool.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_time TEXT');
+
+        // Multi-tenancy Migrations
+        await pool.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS user_id TEXT');
+        await pool.query('ALTER TABLE projects ADD COLUMN IF NOT EXISTS user_id TEXT');
+        await pool.query('ALTER TABLE game_state ADD COLUMN IF NOT EXISTS user_id TEXT');
+
+        // Create index for performance
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_gamestate_user_id ON game_state(user_id)');
+
         console.log('Migrations applied.');
 
         // Initialize default game state if not exists
