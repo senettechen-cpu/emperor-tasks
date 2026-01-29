@@ -21,7 +21,10 @@ export const LineCallback: React.FC = () => {
 
             try {
                 // Exchange code for custom token via backend
-                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/line`, {
+                const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+                const baseUrl = rawUrl.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+
+                const response = await fetch(`${baseUrl}/api/auth/line`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
