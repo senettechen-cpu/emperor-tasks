@@ -790,69 +790,63 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const result: BattleResult = isVictory ? 'victory' : 'defeat';
-    // ... (rest of logic not needed for this replacement block, assuming file ends)
-}
+    const resolveSector = (monthId: string) => {
+        const targetMonthIdx = parseInt(monthId.slice(1)) - 1;
+        if (targetMonthIdx !== currentMonth) {
+            console.warn("Commander, you can only resolve the CURRENT sector.");
+            return;
+        }
+        const scalingThreat = Math.floor(500 * Math.pow(1.52, targetMonthIdx));
+        const garrison = armyStrength.garrisons[monthId] || { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
+        const garrisonPower = calculateActivePower({ [monthId]: garrison });
+        const isVictory = garrisonPower >= scalingThreat;
 
-// Debug Actions
-const debugSetResources = (res: Resources) => setResources(res);
-const debugSetCorruption = (val: number) => setCorruption(val);
-const debugSetArmyStrength = (army: ArmyStrength) => setArmyStrength(army);
+        const result: BattleResult = isVictory ? 'victory' : 'defeat';
 
-return (
-    <GameContext.Provider value={{
-        tasks, resources, corruption, ownedUnits, isPenitentMode,
-        addTask, updateTask, purgeTask, deleteTask, buyUnit, cleanseCorruption, resetGame,
-        radarTheme, purchaseItem,
-        viewMode, setViewMode, projects, addProject, addSubTask, completeSubTask, updateSubTask, deleteSubTask, deleteProject,
-        armyStrength, currentMonth, getTraitForMonth, sectorHistory, resolveSector, advanceMonth: () => { }, allTasks: tasks,
-        activeTacticalScan, activateTacticalScan, fortifiedSectors, fortifySector, triggerBattlefieldMiracle, deployUnit, recallUnit, recruitUnit,
-        exportSTC, importSTC,
-        debugSetResources, debugSetCorruption, debugSetArmyStrength
-    }}>
-        {children}
-    </GameContext.Provider>
-);
-};
+        if (isVictory) {
+            setResources(prev => ({ ...prev, glory: prev.glory + 500 }));
+        } else {
+            setCorruption(prev => Math.min(100, prev + 20));
+        }
 
-if (isVictory) {
-    setResources(prev => ({ ...prev, glory: prev.glory + 500 }));
-} else {
-    setCorruption(prev => Math.min(100, prev + 20));
-}
-
-setSectorHistory(prev => ({ ...prev, [monthId]: result }));
-setCurrentMonth(prev => (prev + 1) % 12);
+        setSectorHistory(prev => ({ ...prev, [monthId]: result }));
+        setCurrentMonth(prev => (prev + 1) % 12);
     };
 
-const advanceMonth = () => {
-    setCurrentMonth(prev => (prev + 1) % 12);
-};
+    const advanceMonth = () => {
+        setCurrentMonth(prev => (prev + 1) % 12);
+    };
 
-return (
-    <GameContext.Provider value={{
-        tasks: tasks.filter(t => {
-            if (!t.isRecurring) return t.status === 'active';
-            if (!t.lastCompletedAt) return true;
-            const lastComp = new Date(t.lastCompletedAt).toLocaleDateString();
-            const now = new Date().toLocaleDateString();
-            return lastComp !== now;
-        }),
-        resources, corruption, ownedUnits, isPenitentMode,
-        addTask, updateTask, purgeTask, deleteTask, buyUnit, cleanseCorruption, resetGame,
-        radarTheme, purchaseItem,
-        viewMode, setViewMode, projects, addProject,
-        addSubTask, completeSubTask, updateSubTask, deleteSubTask, deleteProject, recruitUnit,
-        deployUnit, recallUnit,
-        armyStrength,
-        getTraitForMonth, exportSTC, importSTC,
-        currentMonth, sectorHistory, resolveSector, advanceMonth,
-        allTasks: tasks,
-        activeTacticalScan, activateTacticalScan, fortifiedSectors, fortifySector, triggerBattlefieldMiracle
-    }}>
-        {children}
-    </GameContext.Provider>
-);
+    // Debug Actions
+    const debugSetResources = (res: Resources) => setResources(res);
+    const debugSetCorruption = (val: number) => setCorruption(val);
+    const debugSetArmyStrength = (army: ArmyStrength) => setArmyStrength(army);
+
+    return (
+        <GameContext.Provider value={{
+            tasks: tasks.filter(t => {
+                if (!t.isRecurring) return t.status === 'active';
+                if (!t.lastCompletedAt) return true;
+                const lastComp = new Date(t.lastCompletedAt).toLocaleDateString();
+                const now = new Date().toLocaleDateString();
+                return lastComp !== now;
+            }),
+            resources, corruption, ownedUnits, isPenitentMode,
+            addTask, updateTask, purgeTask, deleteTask, buyUnit, cleanseCorruption, resetGame,
+            radarTheme, purchaseItem,
+            viewMode, setViewMode, projects, addProject,
+            addSubTask, completeSubTask, updateSubTask, deleteSubTask, deleteProject, recruitUnit,
+            deployUnit, recallUnit,
+            armyStrength,
+            getTraitForMonth, exportSTC, importSTC,
+            currentMonth, sectorHistory, resolveSector, advanceMonth,
+            allTasks: tasks,
+            activeTacticalScan, activateTacticalScan, fortifiedSectors, fortifySector, triggerBattlefieldMiracle,
+            debugSetResources, debugSetCorruption, debugSetArmyStrength
+        }}>
+            {children}
+        </GameContext.Provider>
+    );
 };
 
 export const useGame = () => {
