@@ -1,85 +1,104 @@
 
 import { Task, Project, ArmyStrength, SectorHistory, Resources } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = `${BASE_URL}/api`;
+
+const getHeaders = (token?: string) => {
+    const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+    };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+};
 
 export const api = {
     // Tasks
-    getTasks: async (): Promise<Task[]> => {
-        const response = await fetch(`${API_URL}/tasks`);
+    getTasks: async (token?: string): Promise<Task[]> => {
+        const response = await fetch(`${API_URL}/tasks`, {
+            headers: getHeaders(token)
+        });
         if (!response.ok) throw new Error('Failed to fetch tasks');
         return response.json();
     },
 
-    createTask: async (task: Task): Promise<void> => {
+    createTask: async (task: Task, token?: string): Promise<void> => {
         const response = await fetch(`${API_URL}/tasks`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getHeaders(token),
             body: JSON.stringify(task)
         });
         if (!response.ok) throw new Error('Failed to create task');
     },
 
-    updateTask: async (id: string, updates: Partial<Task>): Promise<void> => {
+    updateTask: async (id: string, updates: Partial<Task>, token?: string): Promise<void> => {
         const response = await fetch(`${API_URL}/tasks/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getHeaders(token),
             body: JSON.stringify(updates)
         });
         if (!response.ok) throw new Error('Failed to update task');
     },
 
-    deleteTask: async (id: string): Promise<void> => {
+    deleteTask: async (id: string, token?: string): Promise<void> => {
         const response = await fetch(`${API_URL}/tasks/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: getHeaders(token)
         });
         if (!response.ok) throw new Error('Failed to delete task');
     },
 
     // Game State
-    getGameState: async () => {
-        const response = await fetch(`${API_URL}/game-state`);
+    getGameState: async (token?: string) => {
+        const response = await fetch(`${API_URL}/game-state`, {
+            headers: getHeaders(token)
+        });
         if (!response.ok) throw new Error('Failed to fetch game state');
         return response.json();
     },
 
-    syncGameState: async (state: any): Promise<void> => {
+    syncGameState: async (state: any, token?: string): Promise<void> => {
         const response = await fetch(`${API_URL}/game-state`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getHeaders(token),
             body: JSON.stringify(state)
         });
         if (!response.ok) throw new Error('Failed to sync game state');
     },
 
     // Projects
-    getProjects: async (): Promise<Project[]> => {
-        const response = await fetch(`${API_URL}/projects`);
+    getProjects: async (token?: string): Promise<Project[]> => {
+        const response = await fetch(`${API_URL}/projects`, {
+            headers: getHeaders(token)
+        });
         if (!response.ok) throw new Error('Failed to fetch projects');
         return response.json();
     },
 
-    createProject: async (project: Project): Promise<void> => {
+    createProject: async (project: Project, token?: string): Promise<void> => {
         const response = await fetch(`${API_URL}/projects`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getHeaders(token),
             body: JSON.stringify(project)
         });
         if (!response.ok) throw new Error('Failed to create project');
     },
 
-    updateProject: async (id: string, updates: Partial<Project>): Promise<void> => {
+    updateProject: async (id: string, updates: Partial<Project>, token?: string): Promise<void> => {
         const response = await fetch(`${API_URL}/projects/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getHeaders(token),
             body: JSON.stringify(updates)
         });
         if (!response.ok) throw new Error('Failed to update project');
     },
 
-    deleteProject: async (id: string): Promise<void> => {
+    deleteProject: async (id: string, token?: string): Promise<void> => {
         const response = await fetch(`${API_URL}/projects/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: getHeaders(token)
         });
         if (!response.ok) throw new Error('Failed to delete project');
     }

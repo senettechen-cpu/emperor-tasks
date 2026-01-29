@@ -56,7 +56,12 @@ interface GameContextType {
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
+import { useAuth } from './AuthContext';
+
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    // Auth
+    const { getToken, user } = useAuth();
+
     // State Initialization
     const [tasks, setTasks] = useState<Task[]>([]);
     const [resources, setResources] = useState<Resources>({ rp: 0, glory: 0 });
@@ -102,8 +107,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     useEffect(() => {
         const loadData = async () => {
             try {
+                const token = await getToken();
+                if (!token) return; // Should not happen given App structure, but safe guard
+
                 // Load Tasks - Normalize Dates
-                const tasksData = await api.getTasks();
+                const tasksData = await api.getTasks(token);
                 const processedTasks = tasksData.map((t: any) => ({
                     ...t,
                     dueDate: new Date(t.dueDate),
@@ -114,11 +122,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setTasks(processedTasks);
 
                 // Load Projects
-                const projectsData = await api.getProjects();
+                const projectsData = await api.getProjects(token);
                 setProjects(projectsData || []);
 
                 // Load Game State
-                const gameState = await api.getGameState();
+                const gameState = await api.getGameState(token);
                 if (gameState) {
                     if (gameState.resources) setResources(gameState.resources);
                     if (gameState.corruption !== undefined) setCorruption(gameState.corruption);
@@ -134,19 +142,21 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
         };
 
-        loadData();
-
-        // Polling (Every 5 seconds)
-        const pollTimer = setInterval(loadData, 5000);
-
-        return () => clearInterval(pollTimer);
-    }, []);
+        if (user) {
+            loadData();
+            // Polling (Every 5 seconds)
+            const pollTimer = setInterval(loadData, 5000);
+            return () => clearInterval(pollTimer);
+        }
+    }, [user, getToken]);
 
     // Sync Game State (Optimistic Updates + Debounced Sync)
     useEffect(() => {
-        if (!initialized) return;
+        if (!initialized || !user) return;
 
-        const timer = setTimeout(() => {
+        const timer = setTimeout(async () => {
+            const token = await getToken();
+            if (!token) return;
             api.syncGameState({
                 resources,
                 corruption,
@@ -155,11 +165,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 currentMonth,
                 sectorHistory,
                 isPenitentMode
-            }).catch(err => console.error("Sync Failed", err));
+            }, token).catch(err => console.error("Sync Failed", err));
         }, 1000); // Debounce 1s
 
         return () => clearTimeout(timer);
-    }, [resources, corruption, ownedUnits, armyStrength, currentMonth, sectorHistory, isPenitentMode, initialized]);
+    }, [resources, corruption, ownedUnits, armyStrength, currentMonth, sectorHistory, isPenitentMode, initialized, user, getToken]);
 
     // Sector Traits Initialization
     const getTraitForMonth = (monthId: string): PlanetaryTraitType => {
@@ -289,7 +299,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setTasks(prev => [...prev, newTask]);
 
         try {
-            await api.createTask(newTask);
+            const token = await getToken();
+            if (token) await api.createTask(newTask, token);
         } catch (err) {
             console.error("Failed to sync new task", err);
             // Revert or retry logic?
@@ -306,7 +317,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updateTask = async (id: string, updates: Partial<Task>) => {
         setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
         try {
-            await api.updateTask(id, updates);
+            const token = await getToken();
+            if (token) await api.updateTask(id, updates, token);
         } catch (err) {
             console.error("Failed to update task", err);
         }
@@ -348,7 +360,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             if (newStreak === 0) newStreak = 1;
                             const updatedFix = { ...t, streak: newStreak };
                             if (t.streak !== newStreak) {
-                                api.updateTask(id, { streak: newStreak }).catch(console.error);
+                                getToken().then(token => token && api.updateTask(id, { streak: newStreak }, token).catch(console.error));
                                 return updatedFix;
                             }
                             return t;
@@ -387,10 +399,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         }
 
                         const updated = { ...t, lastCompletedAt: new Date(), status: 'active' as const, streak: newStreak };
-                        api.updateTask(id, { lastCompletedAt: updated.lastCompletedAt, status: 'active', streak: newStreak }).catch(e => console.error(e));
+                        getToken().then(token => token && api.updateTask(id, { lastCompletedAt: updated.lastCompletedAt, status: 'active', streak: newStreak }, token).catch(e => console.error(e)));
                         return updated;
                     }
-                    api.updateTask(id, { status: 'completed' }).catch(e => console.error(e));
+                    getToken().then(token => token && api.updateTask(id, { status: 'completed' }, token).catch(e => console.error(e)));
                     return { ...t, status: 'completed' as const };
                 }
                 return t;
@@ -421,7 +433,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const deleteTask = async (id: string) => {
         setTasks(prev => prev.filter(t => t.id !== id));
         try {
-            await api.deleteTask(id);
+            const token = await getToken();
+            if (token) await api.deleteTask(id, token);
         } catch (err) {
             console.error("Failed to delete task", err);
         }
@@ -464,7 +477,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const target = orkTasks[ransomIdx];
 
                 // Sync effect
-                api.updateTask(target.id, { status: 'completed' }).catch(e => console.error(e));
+                getToken().then(token => token && api.updateTask(target.id, { status: 'completed' }, token).catch(e => console.error(e)));
 
                 return prev.map(t => t.id === target.id ? { ...t, status: 'completed' } : t);
             });
@@ -491,7 +504,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             completed: false
         };
         setProjects(prev => [...prev, newProject]);
-        api.createProject(newProject).catch(err => console.error("Failed to create project", err));
+        getToken().then(token => token && api.createProject(newProject, token).catch(err => console.error("Failed to create project", err)));
         return newProject.id;
     };
 
@@ -503,7 +516,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const newSubTasks = [...(project.subTasks || []), newSubTask];
 
         setProjects(prev => prev.map(p => p.id === projectId ? { ...p, subTasks: newSubTasks } : p));
-        api.updateProject(projectId, { subTasks: newSubTasks }).catch(err => console.error("Failed to update project subtasks", err));
+        getToken().then(token => token && api.updateProject(projectId, { subTasks: newSubTasks }, token).catch(err => console.error("Failed to update project subtasks", err)));
     };
 
     const completeSubTask = (projectId: string, subTaskId: string) => {
@@ -542,7 +555,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
 
             // API Sync
-            api.updateProject(p.id, { subTasks: updatedSubTasks, completed: allCompleted || p.completed }).catch(err => console.error(err));
+            getToken().then(token => token && api.updateProject(p.id, { subTasks: updatedSubTasks, completed: allCompleted || p.completed }, token).catch(err => console.error(err)));
 
             return { ...p, subTasks: updatedSubTasks, completed: allCompleted || p.completed };
         }));
@@ -568,7 +581,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const deleteProject = (projectId: string) => {
         setProjects(prev => prev.filter(p => p.id !== projectId));
-        api.deleteProject(projectId).catch(err => console.error("Failed to delete project", err));
+        getToken().then(token => token && api.deleteProject(projectId, token).catch(err => console.error("Failed to delete project", err)));
     };
 
     const recruitUnit = (type: UnitType) => {
@@ -715,7 +728,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 currentMonth: data.currentMonth,
                 sectorHistory: data.sectorHistory,
                 isPenitentMode: data.isPenitentMode
-            });
+            }, await getToken() || undefined);
 
             // Sync Tasks (Loop)
             for (const task of data.tasks) {
