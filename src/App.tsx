@@ -320,6 +320,24 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
         ) : (
           <SectorMap />
         )}
+
+        {/* Tactical FAB - Quick Add Task (Mobile Only) */}
+        {!isDrawerOpen && (
+          <div className="fixed bottom-24 right-6 z-40 md:hidden">
+            <Button
+              type="primary"
+              shape="circle"
+              icon={<Plus size={32} />}
+              className="!w-16 !h-16 !bg-imperial-gold !text-black !border-none shadow-[0_0_20px_rgba(251,191,36,0.5)] animate-bounce-slow flex items-center justify-center"
+              onClick={() => { setEditingTask(null); setIsAddModalOpen(true); }}
+            />
+            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <span className="text-[10px] font-mono text-imperial-gold bg-black/80 px-2 rounded border border-imperial-gold/30">
+                DEPLOY
+              </span>
+            </div>
+          </div>
+        )}
       </main>
 
       <NavigationArray onOpenArmory={() => setIsArmoryOpen(true)} />
