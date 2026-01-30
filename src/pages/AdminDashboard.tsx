@@ -1,8 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../contexts/GameContext';
-import { Button, Input, Card, Statistic, Table, Tag, message, Collapse } from 'antd';
-import { Save, AlertTriangle, Shield, Coins, Star, Trash2 } from 'lucide-react';
+import { Button, Input, Card, Statistic, Table, Tag, message, Collapse, Tabs } from 'antd';
+import { Save, AlertTriangle, Shield, Coins, Star, Trash2, FileText, RefreshCw } from 'lucide-react'; // Added icons
+import { api } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import dayjs from 'dayjs';
+
+const { TabPane } = Tabs;
 
 const { Panel } = Collapse;
 
@@ -12,6 +17,30 @@ export const AdminDashboard: React.FC = () => {
         debugSetResources, debugSetCorruption, debugSetArmyStrength,
         deleteTask, updateTask
     } = useGame();
+    const { getToken } = useAuth();
+
+    // Logs State
+    const [logs, setLogs] = useState<any[]>([]);
+    const [loadingLogs, setLoadingLogs] = useState(false);
+
+    const fetchLogs = async () => {
+        setLoadingLogs(true);
+        try {
+            const token = await getToken();
+            if (token) {
+                const data = await api.getLogs(100, 0, token); // Limit 100
+                setLogs(data);
+            }
+        } catch (e) {
+            message.error("Failed to fetch logs");
+        } finally {
+            setLoadingLogs(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchLogs();
+    }, []);
 
     const [localRp, setLocalRp] = useState(resources.rp);
     const [localGlory, setLocalGlory] = useState(resources.glory);
@@ -144,6 +173,62 @@ export const AdminDashboard: React.FC = () => {
                         pagination={{ pageSize: 5 }}
                         size="small"
                         className="dark-table"
+                    />
+                </Card>
+
+                {/* Audit Logs */}
+                <Card title={<span className="text-zinc-400">Log Cogitator (Audit Records)</span>} className="!bg-black/50 !border-zinc-700/30 md:col-span-2">
+                    <div className="mb-4 flex justify-end">
+                        <Button icon={<RefreshCw size={14} />} onClick={fetchLogs} loading={loadingLogs}>Refresh Logs</Button>
+                    </div>
+                    <Table
+                        dataSource={logs}
+                        rowKey="id"
+                        pagination={{ pageSize: 10 }}
+                        size="small"
+                        className="dark-table"
+                        scroll={{ x: true }}
+                        columns={[
+                            {
+                                title: 'Time',
+                                dataIndex: 'created_at',
+                                key: 'time',
+                                render: (d: string) => <span className="text-zinc-500">{dayjs(d).format('MM-DD HH:mm:ss')}</span>,
+                                width: 140
+                            },
+                            {
+                                title: 'User',
+                                dataIndex: 'user_id',
+                                key: 'user',
+                                ellipsis: true,
+                                render: (u: string) => <span className="text-xs text-zinc-600">{u.slice(0, 8)}...</span>
+                            },
+                            {
+                                title: 'Category',
+                                dataIndex: 'category',
+                                key: 'cat',
+                                render: (c: string) => {
+                                    let color = 'default';
+                                    if (c === 'rp') color = 'gold';
+                                    if (c === 'glory') color = 'blue';
+                                    if (c === 'corruption') color = 'red';
+                                    return <Tag color={color}>{c.toUpperCase()}</Tag>;
+                                }
+                            },
+                            {
+                                title: 'Change',
+                                key: 'change',
+                                render: (_: any, r: any) => {
+                                    const isPos = r.change_type === 'increase';
+                                    return (
+                                        <span className={isPos ? 'text-green-500' : 'text-red-500'}>
+                                            {isPos ? '+' : '-'}{r.amount}
+                                        </span>
+                                    );
+                                }
+                            },
+                            { title: 'Reason', dataIndex: 'reason', key: 'reason' }
+                        ]}
                     />
                 </Card>
             </div>

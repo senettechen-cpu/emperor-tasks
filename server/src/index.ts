@@ -29,6 +29,9 @@ app.use('/api/migration', verifyToken, migrationRoutes);
 import authRoutes from './routes/auth';
 app.use('/api/auth', authRoutes); // Public route for login
 
+import logRoutes from './routes/logs';
+app.use('/api/logs', verifyToken, logRoutes);
+
 // Database connection
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,

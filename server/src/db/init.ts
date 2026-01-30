@@ -48,6 +48,18 @@ const schemaSql = `
         sector_history JSONB DEFAULT '{}'::jsonb,
         owned_units JSONB DEFAULT '[]'::jsonb
     );
+    -- Resource Logs Table
+    CREATE TABLE IF NOT EXISTS resource_logs (
+        id SERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        category TEXT NOT NULL,
+        change_type TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        reason TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_logs_user_id ON resource_logs(user_id);
 `;
 
 const initDb = async () => {

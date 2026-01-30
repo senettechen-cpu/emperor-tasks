@@ -102,6 +102,18 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
 
+    // Helper for Resources & Logging
+    const modifyResources = (rpChange: number, gloryChange: number, reason: string) => {
+        setResources(prev => ({ rp: Math.max(0, prev.rp + rpChange), glory: Math.max(0, prev.glory + gloryChange) }));
+        if (rpChange !== 0) api.logResourceChange({ category: 'rp', amount: rpChange, reason });
+        if (gloryChange !== 0) api.logResourceChange({ category: 'glory', amount: gloryChange, reason });
+    };
+
+    const modifyCorruption = (change: number, reason: string) => {
+        setCorruption(prev => Math.max(0, Math.min(100, prev + change)));
+        if (change !== 0) api.logResourceChange({ category: 'corruption', amount: change, reason });
+    };
+
     // Time & Battle Resolution State
     const [currentMonth, setCurrentMonth] = useState<number>(0);
     const [sectorHistory, setSectorHistory] = useState<SectorHistory>({});
@@ -270,7 +282,12 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         console.log("Fortification reduced corruption gain.");
                     }
 
-                    setCorruption(prev => Math.min(100, prev + corruptionIncrease));
+                    if (fortifiedSectors.includes(currentMonthId)) {
+                        corruptionIncrease *= 0.5;
+                        console.log("Fortification reduced corruption gain.");
+                    }
+
+                    modifyCorruption(corruptionIncrease, "Corruption Engine: Overdue Tasks");
                 }
             }
 
@@ -312,10 +329,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Immediate Logic: Check for Heresy (Overdue on Attribute)
+        // Immediate Logic: Check for Heresy (Overdue on Attribute)
         if (dueDate < new Date()) {
-            setCorruption(prev => Math.min(100, prev + 10));
+            modifyCorruption(10, "Task Created: Overdue (Heresy)");
         } else {
-            setCorruption(prev => Math.max(0, prev - 1));
+            modifyCorruption(-1, "Task Created: Diligence");
         }
     };
 
@@ -434,13 +452,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setActiveTacticalScan(false); // Consume charge
             }
         }
-        setResources(prev => {
-            const newRp = (prev?.rp || 0) + rpReward;
-            const newGlory = (prev?.glory || 0) + 5;
-            return { ...prev, rp: newRp, glory: newGlory };
-        });
 
-        setCorruption(prev => Math.max(0, prev - 2));
+
+        modifyResources(rpReward, 5, `Task Completed: ${tasks.find(t => t.id === id)?.title || 'Unknown'}`);
+        modifyCorruption(-2, "Task Completed: Purification");
     };
 
     const deleteTask = async (id: string) => {
@@ -455,15 +470,15 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const buyUnit = (unitId: string, cost: number) => {
         if (resources.glory >= cost && !ownedUnits.includes(unitId)) {
-            setResources(prev => ({ ...prev, glory: prev.glory - cost }));
+            modifyResources(0, -cost, `Unit Purchased: ${unitId}`);
             setOwnedUnits(prev => [...prev, unitId]);
         }
     };
 
     const cleanseCorruption = () => {
         if (resources.rp >= 20) {
-            setResources(prev => ({ ...prev, rp: prev.rp - 20 }));
-            setCorruption(prev => Math.max(0, prev - 30));
+            modifyResources(-20, 0, "Ritual: Cleanse Corruption");
+            modifyCorruption(-30, "Ritual: Cleanse Corruption");
         }
     };
 
@@ -479,7 +494,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return;
         }
 
-        setResources(prev => ({ ...prev, rp: prev.rp - cost }));
+        modifyResources(-cost, 0, `Armory Purchase: ${type}`);
 
         // Execute Effects
         if (type === 'servo_skull') {
@@ -505,7 +520,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setRadarTheme('gold');
         }
         else if (type === 'rosarius') {
-            setCorruption(prev => Math.max(0, prev - 50));
+            modifyCorruption(-50, "Item Effect: Rosarius");
         }
     };
 
@@ -558,7 +573,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             if (gloryGained) {
                 // Base Subtask Glory
-                setResources(res => ({ ...res, glory: res.glory + 50 }));
+                modifyResources(0, 50, "Project Subtask Completed");
             }
 
             if (isJustCompleted) {
@@ -571,7 +586,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (isDeathWorld) bonus *= 2;
                 else if (isForgeWorld) bonus = Math.floor(bonus * 1.2);
 
-                setResources(res => ({ ...res, glory: res.glory + bonus }));
+                modifyResources(0, bonus, `Project Completed: ${p.title}`);
             }
 
             // API Sync
@@ -621,7 +636,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         if (resources.glory >= cost) {
-            setResources(prev => ({ ...prev, glory: prev.glory - cost }));
+            modifyResources(0, -cost, `Recruited: ${type}`);
             setArmyStrength(prev => {
                 return {
                     ...prev,
@@ -669,14 +684,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const activateTacticalScan = () => {
         if (resources.rp >= 15 && !activeTacticalScan) {
-            setResources(prev => ({ ...prev, rp: prev.rp - 15 }));
+            modifyResources(-15, 0, "Strategic Action: Tactical Scan");
             setActiveTacticalScan(true);
         }
     };
 
     const fortifySector = (monthId: string) => {
         if (resources.rp >= 40 && !fortifiedSectors.includes(monthId)) {
-            setResources(prev => ({ ...prev, rp: prev.rp - 40 }));
+            modifyResources(-40, 0, `Strategic Action: Fortify Sector ${monthId}`);
             setFortifiedSectors(prev => [...prev, monthId]);
         }
     };
@@ -690,10 +705,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const rate = total > 0 ? completed / total : 0;
 
             if (rate > 0.7) {
-                setResources(prev => ({ ...prev, glory: prev.glory - 500, rp: prev.rp + 100 }));
+                modifyResources(100, -500, "Miracle: Battlefield Miracle Triggered");
                 // Clear corruption logic? Global or specific?
                 // "Clear all corruption penalties for that month" - usually implies sector traits or just reduce corruption massively
-                setCorruption(prev => Math.max(0, prev - 50));
+                modifyCorruption(-50, "Miracle: Divine Light");
                 console.log("Miracle Triggered!");
             } else {
                 console.warn("Faith is insufficient.");
@@ -804,9 +819,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const result: BattleResult = isVictory ? 'victory' : 'defeat';
 
         if (isVictory) {
-            setResources(prev => ({ ...prev, glory: prev.glory + 500 }));
+            modifyResources(0, 500, "Battle Victory");
         } else {
-            setCorruption(prev => Math.min(100, prev + 20));
+            modifyCorruption(20, "Battle Defeat");
         }
 
         setSectorHistory(prev => ({ ...prev, [monthId]: result }));
@@ -818,8 +833,19 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     // Debug Actions
-    const debugSetResources = (res: Resources) => setResources(res);
-    const debugSetCorruption = (val: number) => setCorruption(val);
+    const debugSetResources = (res: Resources) => {
+        // Calculate deltas for logging
+        const rpDelta = res.rp - resources.rp;
+        const gloryDelta = res.glory - resources.glory;
+        setResources(res);
+        if (rpDelta !== 0) api.logResourceChange({ category: 'rp', amount: rpDelta, reason: "GM Override" });
+        if (gloryDelta !== 0) api.logResourceChange({ category: 'glory', amount: gloryDelta, reason: "GM Override" });
+    };
+    const debugSetCorruption = (val: number) => {
+        const delta = val - corruption;
+        setCorruption(val);
+        api.logResourceChange({ category: 'corruption', amount: delta, reason: "GM Override" });
+    };
     const debugSetArmyStrength = (army: ArmyStrength) => setArmyStrength(army);
 
     return (

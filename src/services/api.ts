@@ -102,5 +102,24 @@ export const api = {
             headers: getHeaders(token)
         });
         if (!response.ok) throw new Error('Failed to delete project');
+    },
+
+    // Audit Logs
+    logResourceChange: async (data: { category: string; amount: number; reason: string }, token?: string): Promise<void> => {
+        // Fire and forget, but we await it to catch errors if needed.
+        // In GameContext we might not await it to prevent blocking UI.
+        fetch(`${API_URL}/logs`, {
+            method: 'POST',
+            headers: getHeaders(token),
+            body: JSON.stringify(data)
+        }).catch(err => console.error("Failed to log resource change:", err));
+    },
+
+    getLogs: async (limit: number = 50, offset: number = 0, token?: string): Promise<any[]> => {
+        const response = await fetch(`${API_URL}/logs?limit=${limit}&offset=${offset}`, {
+            headers: getHeaders(token)
+        });
+        if (!response.ok) throw new Error('Failed to fetch logs');
+        return response.json();
     }
 };
