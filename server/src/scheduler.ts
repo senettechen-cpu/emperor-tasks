@@ -29,19 +29,25 @@ export const startScheduler = () => {
     setInterval(async () => {
         try {
             // 1. Check for Overdue Tasks (Corruption Logic)
-            const result = await query(
-                `SELECT COUNT(*) as count FROM tasks 
+            // Fix: Update corruption ONLY for users who have overdue tasks
+            const overdueUsersResult = await query(
+                `SELECT DISTINCT user_id FROM tasks 
                  WHERE status = 'active' 
-                 AND due_date < NOW()`
+                 AND due_date < NOW()
+                 AND user_id IS NOT NULL`
             );
-            const overdueCount = parseInt(result.rows[0].count);
 
-            if (overdueCount > 0) {
-                console.log(`[Scheduler] Detected ${overdueCount} overdue tasks. Increasing corruption...`);
+            if (overdueUsersResult.rows.length > 0) {
+                const userIds = overdueUsersResult.rows.map(r => r.user_id);
+                console.log(`[Scheduler] detected overdue tasks for users: ${userIds.join(', ')}`);
+
+                // Update corruption for these users only
+                // We use Postgres ANY() for array matching
                 await query(
                     `UPDATE game_state 
                      SET corruption = LEAST(100, corruption + 1) 
-                     WHERE id = 'global'`
+                     WHERE user_id = ANY($1)`,
+                    [userIds]
                 );
             }
 
