@@ -15,7 +15,12 @@ if (!mailto.startsWith('mailto:') && !mailto.startsWith('https://')) {
 }
 
 if (publicVapidKey && privateVapidKey) {
-    webpush.setVapidDetails(mailto, publicVapidKey, privateVapidKey);
+    try {
+        webpush.setVapidDetails(mailto, publicVapidKey, privateVapidKey);
+    } catch (err) {
+        console.error('[Scheduler] VAPID Setup Failed:', err);
+        // Continue without VAPID
+    }
 } else {
     console.warn('[Scheduler] VAPID keys missing. Push notifications disabled.');
 }
