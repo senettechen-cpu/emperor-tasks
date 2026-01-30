@@ -9,7 +9,10 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 // VAPID Setup
 const publicVapidKey = process.env.VAPID_PUBLIC_KEY;
 const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
-const mailto = process.env.MAILTO || 'mailto:example@example.com';
+let mailto = process.env.MAILTO || 'mailto:example@example.com';
+if (!mailto.startsWith('mailto:') && !mailto.startsWith('https://')) {
+    mailto = `mailto:${mailto}`;
+}
 
 if (publicVapidKey && privateVapidKey) {
     webpush.setVapidDetails(mailto, publicVapidKey, privateVapidKey);
