@@ -99,10 +99,65 @@ export const AdminDashboard: React.FC = () => {
                     <Shield className="inline mr-2 mb-1" />
                     Inquisition Administration Console
                 </h1>
-                <div className="text-zinc-500">ACCESS LEVEL: OMEGA</div>
+                <div className="text-zinc-500">ACCESS LEVEL: OMEGA <span className="text-xs text-green-500 ml-2">v2.3.1 (Audit Live)</span></div>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Audit Logs (Moved to Top for Visibility) */}
+                <Card title={<span className="text-zinc-400">Log Cogitator (Audit Records)</span>} className="!bg-black/50 !border-zinc-700/30 md:col-span-2">
+                    <div className="mb-4 flex justify-end">
+                        <Button icon={<RefreshCw size={14} />} onClick={fetchLogs} loading={loadingLogs}>Refresh Logs</Button>
+                    </div>
+                    <Table
+                        dataSource={logs}
+                        rowKey="id"
+                        pagination={{ pageSize: 5 }}
+                        size="small"
+                        className="dark-table"
+                        scroll={{ x: true }}
+                        columns={[
+                            {
+                                title: 'Time',
+                                dataIndex: 'created_at',
+                                key: 'time',
+                                render: (d: string) => <span className="text-zinc-500">{dayjs(d).format('MM-DD HH:mm:ss')}</span>,
+                                width: 140
+                            },
+                            {
+                                title: 'User',
+                                dataIndex: 'user_id',
+                                key: 'user',
+                                ellipsis: true,
+                                render: (u: string) => <span className="text-xs text-zinc-600">{u.slice(0, 8)}...</span>
+                            },
+                            {
+                                title: 'Category',
+                                dataIndex: 'category',
+                                key: 'cat',
+                                render: (c: string) => {
+                                    let color = 'default';
+                                    if (c === 'rp') color = 'gold';
+                                    if (c === 'glory') color = 'blue';
+                                    if (c === 'corruption') color = 'red';
+                                    return <Tag color={color}>{c.toUpperCase()}</Tag>;
+                                }
+                            },
+                            {
+                                title: 'Change',
+                                key: 'change',
+                                render: (_: any, r: any) => {
+                                    const isPos = r.change_type === 'increase';
+                                    return (
+                                        <span className={isPos ? 'text-green-500' : 'text-red-500'}>
+                                            {isPos ? '+' : '-'}{r.amount}
+                                        </span>
+                                    );
+                                }
+                            },
+                            { title: 'Reason', dataIndex: 'reason', key: 'reason' }
+                        ]}
+                    />
+                </Card>
                 {/* Resources Panel */}
                 <Card title={<span className="text-imperial-gold">Resource Override</span>} className="!bg-black/50 !border-imperial-gold/30">
                     <div className="flex gap-4 mb-4">
