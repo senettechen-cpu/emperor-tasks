@@ -1,56 +1,75 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Task } from '../types';
 
+// VAPID Public Key
+const VAPID_PUBLIC_KEY = 'BIN8jX2NwwF5-RptRA3n9Pi6hP9aHcQadZHw7Xy8p3Er_764WB1yV3kZtOeUIvd5WHOGlNhw5t5HBzS5i1jzlBE';
+
+function urlBase64ToUint8Array(base64String: string) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
 export const useLocalNotifications = (tasks: Task[]) => {
-    const notifiedTaskIds = useRef<Set<string>>(new Set());
+    // Note: 'tasks' argument is kept for API compatibility but logic is now server-side push.
+    const [isSubscribed, setIsSubscribed] = useState(false);
 
-    // 1. Request Permission on Mount
     useEffect(() => {
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
-    }, []);
+        const subscribeToPush = async () => {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                return;
+            }
 
-    // 2. Check for upcoming tasks every minute
-    useEffect(() => {
-        const checkTasks = () => {
-            if (Notification.permission !== 'granted') return;
+            try {
+                // Wait for SW to be ready
+                const registration = await navigator.serviceWorker.ready;
 
-            const now = new Date().getTime();
+                // Subscribe
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                });
 
-            tasks.forEach(task => {
-                // Skip if already notified or completed (recurrence logic handled in GameContext, here we just look at raw data)
-                // For recurring tasks, logic might be tricky if the ID doesn't change. 
-                // Assuming ID stays same, we might need to track 'lastNotifiedTime' instead of just ID.
-                // But for now, let's keep it simple. If it's a recurring task, we might need a composite key or reset the Set daily.
+                console.log('Push Subscription Object:', JSON.stringify(subscription));
 
-                const dueDate = new Date(task.dueDate).getTime();
-                const timeDiff = dueDate - now;
-                const minutesLeft = timeDiff / (1000 * 60);
+                // Send to backend
+                const token = localStorage.getItem('token');
+                // Use a relative URL or configured API URL
+                // Assuming dev/prod environment. For now hardcode or use relative if proxy is set.
+                // Since this runs in browser, relative '/api' might work if served from same origin (which it isn't usually in dev).
+                // Let's use the production URL for Zeabur or localhost fallback.
+                const API_URL = window.location.hostname.includes('localhost')
+                    ? 'http://localhost:3001/api'
+                    : 'https://emperor-tasks-server.zeabur.app/api';
 
-                // Condition: 0 < mins <= 10 AND not notified yet
-                if (minutesLeft > 0 && minutesLeft <= 10) {
-                    // Unique key for recurring tasks: ID + Date string to allow re-notification next day
-                    const uniqueKey = `${task.id}-${new Date(task.dueDate).toDateString()}`;
-
-                    if (!notifiedTaskIds.current.has(uniqueKey)) {
-                        // Fire Notification
-                        new Notification(`⚠️ 異端逼近警告: ${task.title}`, {
-                            body: `剩餘時間: ${Math.ceil(minutesLeft)} 分鐘。請立即執行淨化協議。`,
-                            icon: '/pwa-192x192.png', // Assuming pwa icon exists, or fallback
-                            tag: uniqueKey // Prevent duplicates by tag
-                        });
-
-                        // Mark as notified
-                        notifiedTaskIds.current.add(uniqueKey);
-                    }
+                if (token) {
+                    await fetch(`${API_URL}/notifications/subscribe`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ subscription })
+                    });
+                    console.log('Push Subscribed & Sent to Server!');
+                    setIsSubscribed(true);
                 }
-            });
+
+            } catch (err) {
+                console.error('Push Subscription failed:', err);
+            }
         };
 
-        const timer = setInterval(checkTasks, 60000); // Check every 60s
-        checkTasks(); // Check immediately
+        if (Notification.permission === 'default' || Notification.permission === 'granted') {
+            subscribeToPush();
+        }
 
-        return () => clearInterval(timer);
-    }, [tasks]);
+    }, []);
 };

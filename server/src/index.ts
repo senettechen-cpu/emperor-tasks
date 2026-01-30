@@ -32,6 +32,9 @@ app.use('/api/auth', authRoutes); // Public route for login
 import logRoutes from './routes/logs';
 app.use('/api/logs', verifyToken, logRoutes);
 
+import notificationRoutes from './routes/notifications';
+app.use('/api/notifications', verifyToken, notificationRoutes);
+
 // Database connection
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
