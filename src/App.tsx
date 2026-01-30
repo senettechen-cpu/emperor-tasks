@@ -17,6 +17,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { useAuth } from './contexts/AuthContext'
 import { LineCallback } from './pages/LineCallback'
 import { AdminDashboard } from './pages/AdminDashboard'
+import { useLocalNotifications } from './hooks/useLocalNotifications'
 import './App.css'
 
 const { Title, Text } = Typography;
@@ -135,6 +136,8 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
     tasks, resources, corruption, ownedUnits, isPenitentMode,
     addTask, updateTask, purgeTask, deleteTask, buyUnit, cleanseCorruption, resetGame, viewMode, allTasks
   } = useGame();
+
+  useLocalNotifications(allTasks);
 
   // Clock State
   const [currentTime, setCurrentTime] = useState(new Date());
