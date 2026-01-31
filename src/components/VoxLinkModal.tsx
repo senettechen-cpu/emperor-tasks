@@ -78,8 +78,11 @@ export const VoxLinkModal: React.FC<VoxLinkModalProps> = ({ visible, onClose }) 
                                 message.loading("Transmitting test signal...", 1);
                                 await import('../services/api').then(m => m.api.sendTestEmail(localEmail));
                                 message.success("Signal Received! Check your cogitator (Inbox).");
-                            } catch (e) {
-                                message.error("Signal Lost: Check SMTP configuration.");
+                            } catch (e: any) {
+                                console.error("Vox-Link Error:", e);
+                                // Try to extract specific error message from API
+                                const errorMsg = e.message || "Unknown Error";
+                                message.error(`Signal Lost: ${errorMsg}. Check logs/SMTP.`);
                             }
                         }}
                         className="flex-1 !bg-zinc-800 !text-imperial-gold !border-imperial-gold/30 hover:!bg-zinc-700 !font-mono uppercase transition-all"
