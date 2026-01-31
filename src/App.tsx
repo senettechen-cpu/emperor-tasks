@@ -1,13 +1,14 @@
 import { useState, useMemo, useEffect } from 'react'
 import { ConfigProvider, Input, Typography, theme, Button } from 'antd'
 import zhTW from 'antd/locale/zh_TW'
-import { Plus, ShoppingCart, AlertTriangle, Map as MapIcon, Radar } from 'lucide-react'
+import { Plus, ShoppingCart, AlertTriangle, Map as MapIcon, Radar, Mail } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RadarView } from './components/RadarView' // Keep old one just in case, or remove
 import { OrbitalRadar } from './components/OrbitalRadar'
 import { WeaponDeck } from './components/WeaponDeck'
 import { UnitShop } from './components/UnitShop'
 import { AddTaskModal } from './components/AddTaskModal'
+import { VoxLinkModal } from './components/VoxLinkModal'
 import { Armory } from './components/Armory'
 import { NavigationArray } from './components/NavigationArray'
 import { SectorMap } from './components/SectorMap'
@@ -152,6 +153,7 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isArmoryOpen, setIsArmoryOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isVoxLinkOpen, setIsVoxLinkOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [slateViewMode, setSlateViewMode] = useState<'active' | 'mandates'>('active');
@@ -252,14 +254,24 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
             </div>
           </div>
           {currentUser && (
-            <Button
-              ghost
-              danger
-              className="!border-red-900 !text-red-700 hover:!bg-red-900/20 font-mono"
-              onClick={(e) => { e.stopPropagation(); onLogout(); }}
-            >
-              TERMINATE SESSION
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                ghost
+                className="!border-imperial-gold/50 !text-imperial-gold hover:!bg-imperial-gold/20 font-mono"
+                icon={<Mail size={16} />}
+                onClick={() => setIsVoxLinkOpen(true)}
+              >
+                VOX-LINK
+              </Button>
+              <Button
+                ghost
+                danger
+                className="!border-red-900 !text-red-700 hover:!bg-red-900/20 font-mono"
+                onClick={(e) => { e.stopPropagation(); onLogout(); }}
+              >
+                TERMINATE SESSION
+              </Button>
+            </div>
           )}
           <div className="text-right">
             <span className="block text-white/50 text-xs tracking-wider">榮耀值 (GLORY)</span>
@@ -356,6 +368,8 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
       />
 
       <Armory visible={isArmoryOpen} onClose={() => setIsArmoryOpen(false)} />
+
+      <VoxLinkModal visible={isVoxLinkOpen} onClose={() => setIsVoxLinkOpen(false)} />
     </div>
   );
 }
