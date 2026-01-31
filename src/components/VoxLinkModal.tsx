@@ -70,14 +70,31 @@ export const VoxLinkModal: React.FC<VoxLinkModalProps> = ({ visible, onClose }) 
                     </div>
                 </div>
 
-                <Button
-                    type="primary"
-                    icon={<Save size={16} />}
-                    onClick={handleSave}
-                    className="!bg-imperial-gold !text-black !font-bold !tracking-widest !h-10 hover:!bg-white border-none uppercase"
-                >
-                    Establish Link
-                </Button>
+                <div className="flex gap-4">
+                    <Button
+                        onClick={async () => {
+                            if (!localEmail) return message.error("Please enter an email frequency first.");
+                            try {
+                                message.loading("Transmitting test signal...", 1);
+                                await import('../services/api').then(m => m.api.sendTestEmail(localEmail));
+                                message.success("Signal Received! Check your cogitator (Inbox).");
+                            } catch (e) {
+                                message.error("Signal Lost: Check SMTP configuration.");
+                            }
+                        }}
+                        className="flex-1 !bg-zinc-800 !text-imperial-gold !border-imperial-gold/30 hover:!bg-zinc-700 !font-mono uppercase transition-all"
+                    >
+                        Test Signal
+                    </Button>
+                    <Button
+                        type="primary"
+                        icon={<Save size={16} />}
+                        onClick={handleSave}
+                        className="flex-1 !bg-imperial-gold !text-black !font-bold !tracking-widest !h-10 hover:!bg-white border-none uppercase"
+                    >
+                        Establish Link
+                    </Button>
+                </div>
             </div>
         </Modal>
     );

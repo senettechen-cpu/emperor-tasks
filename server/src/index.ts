@@ -35,6 +35,9 @@ app.use('/api/logs', verifyToken, logRoutes);
 import notificationRoutes from './routes/notifications';
 app.use('/api/notifications', verifyToken, notificationRoutes);
 
+import debugRoutes from './routes/debug';
+app.use('/api/debug', verifyToken, debugRoutes);
+
 // Database connection
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,

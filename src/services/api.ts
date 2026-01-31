@@ -78,6 +78,15 @@ export const api = {
         return response.json();
     },
 
+    sendTestEmail: async (email: string, token?: string): Promise<void> => {
+        const response = await fetch(`${API_URL}/debug/test-email`, {
+            method: 'POST',
+            headers: getHeaders(token),
+            body: JSON.stringify({ email })
+        });
+        if (!response.ok) throw new Error('Failed to send test email');
+    },
+
     createProject: async (project: Project, token?: string): Promise<void> => {
         const response = await fetch(`${API_URL}/projects`, {
             method: 'POST',
