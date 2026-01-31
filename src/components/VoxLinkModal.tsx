@@ -76,7 +76,13 @@ export const VoxLinkModal: React.FC<VoxLinkModalProps> = ({ visible, onClose }) 
                             if (!localEmail) return message.error("Please enter an email frequency first.");
                             try {
                                 message.loading("Transmitting test signal...", 1);
-                                await import('../services/api').then(m => m.api.sendTestEmail(localEmail));
+                                // Get current token
+                                const { auth } = await import('../lib/firebase');
+                                const token = await auth.currentUser?.getIdToken();
+
+                                if (!token) throw new Error("Authentication failed: No user found.");
+
+                                await import('../services/api').then(m => m.api.sendTestEmail(localEmail, token));
                                 message.success("Signal Received! Check your cogitator (Inbox).");
                             } catch (e: any) {
                                 console.error("Vox-Link Error:", e);
