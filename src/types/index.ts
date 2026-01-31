@@ -59,4 +59,18 @@ export interface SectorTrait {
 
 export type BattleResult = 'victory' | 'defeat';
 
+
 export type SectorHistory = Record<string, BattleResult>; // e.g. "M1": "victory"
+
+export interface GameState {
+    id: string;
+    resources: Resources;
+    corruption: number;
+    currentMonth: number;
+    isPenitentMode: boolean;
+    armyStrength: ArmyStrength;
+    sectorHistory: SectorHistory;
+    ownedUnits: string[];
+    notificationEmail?: string;
+    emailEnabled?: boolean;
+}

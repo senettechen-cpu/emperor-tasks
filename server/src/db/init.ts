@@ -90,6 +90,10 @@ const initDb = async () => {
         await pool.query('ALTER TABLE projects ADD COLUMN IF NOT EXISTS user_id TEXT');
         await pool.query('ALTER TABLE game_state ADD COLUMN IF NOT EXISTS user_id TEXT');
 
+        // Email Notification Migrations
+        await pool.query('ALTER TABLE game_state ADD COLUMN IF NOT EXISTS notification_email TEXT');
+        await pool.query('ALTER TABLE game_state ADD COLUMN IF NOT EXISTS email_enabled BOOLEAN DEFAULT FALSE');
+
         // Create index for performance
         await pool.query('CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)');
         await pool.query('CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id)');

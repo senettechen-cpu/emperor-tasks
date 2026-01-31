@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../contexts/GameContext';
-import { Button, Input, Card, Statistic, Table, Tag, message, Collapse, Tabs } from 'antd';
-import { Save, AlertTriangle, Shield, Coins, Star, Trash2, FileText, RefreshCw } from 'lucide-react'; // Added icons
+import { Button, Input, Card, Statistic, Table, Tag, message, Collapse, Tabs, Switch } from 'antd';
+import { Save, AlertTriangle, Shield, Coins, Star, Trash2, FileText, RefreshCw, Mail } from 'lucide-react'; // Added icons
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import dayjs from 'dayjs';
@@ -15,7 +15,8 @@ export const AdminDashboard: React.FC = () => {
     const {
         resources, corruption, armyStrength, tasks,
         debugSetResources, debugSetCorruption, debugSetArmyStrength,
-        deleteTask, updateTask
+        deleteTask, updateTask,
+        notificationEmail, emailEnabled, updateSettings
     } = useGame();
     const { getToken } = useAuth();
 
@@ -45,13 +46,17 @@ export const AdminDashboard: React.FC = () => {
     const [localRp, setLocalRp] = useState(resources.rp);
     const [localGlory, setLocalGlory] = useState(resources.glory);
     const [localCorruption, setLocalCorruption] = useState(corruption);
+    const [localEmail, setLocalEmail] = useState(notificationEmail);
+    const [localEmailEnabled, setLocalEmailEnabled] = useState(emailEnabled);
 
     // Sync local state when context changes (initial load)
     useEffect(() => {
         setLocalRp(resources.rp);
         setLocalGlory(resources.glory);
         setLocalCorruption(corruption);
-    }, [resources, corruption]);
+        setLocalEmail(notificationEmail || '');
+        setLocalEmailEnabled(emailEnabled || false);
+    }, [resources, corruption, notificationEmail, emailEnabled]);
 
     const handleSaveResources = () => {
         debugSetResources({ rp: Number(localRp), glory: Number(localGlory) });
@@ -62,6 +67,12 @@ export const AdminDashboard: React.FC = () => {
         debugSetCorruption(Number(localCorruption));
         message.success("Corruption level updated!");
     };
+
+    const handleSaveSettings = () => {
+        updateSettings(localEmail, localEmailEnabled);
+        message.success("Vox-Link Settings Updated!");
+    };
+
 
     const taskColumns = [
         { title: 'ID', dataIndex: 'id', key: 'id', width: 100, ellipsis: true },
@@ -206,6 +217,33 @@ export const AdminDashboard: React.FC = () => {
                     <Button danger icon={<AlertTriangle size={14} />} onClick={handleSaveCorruption} className="w-full">
                         Set Corruption Level
                     </Button>
+                </Card>
+
+                {/* Vox-Link Configuration */}
+                <Card title={<span className="text-yellow-500">Astropathic Choir (Email Setup)</span>} className="!bg-black/50 !border-yellow-900/30">
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-zinc-400 text-xs uppercase tracking-wider">Enable Vox-Link</span>
+                            <Switch
+                                checked={localEmailEnabled}
+                                onChange={setLocalEmailEnabled}
+                                className="bg-zinc-700"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs mb-1 text-zinc-400">Target Astropath (Email)</label>
+                            <Input
+                                prefix={<Mail size={14} />}
+                                value={localEmail}
+                                onChange={e => setLocalEmail(e.target.value)}
+                                className="!bg-black !text-white !border-zinc-700"
+                                placeholder="commander@terra.gov"
+                            />
+                        </div>
+                        <Button type="primary" icon={<Save size={14} />} onClick={handleSaveSettings} className="!bg-yellow-700 !text-white w-full border-none">
+                            Update Vox-Link
+                        </Button>
+                    </div>
                 </Card>
 
                 {/* Army Data (Read-onlyish for now) */}

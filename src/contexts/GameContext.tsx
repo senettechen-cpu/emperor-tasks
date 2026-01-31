@@ -49,6 +49,13 @@ interface GameContextType {
     recallUnit: (monthId: string, unitType: UnitType, count: number) => void;
     recruitUnit: (type: UnitType) => void;
 
+    // Settings
+    notificationEmail: string;
+    emailEnabled: boolean;
+    updateSettings: (email: string, enabled: boolean) => void;
+    modifyResources: (rpChange: number, gloryChange: number, reason: string) => void;
+    modifyCorruption: (change: number, reason: string) => void;
+
     // STC
     exportSTC: () => void;
     importSTC: (jsonData: string) => Promise<void>;
@@ -73,6 +80,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [corruption, setCorruption] = useState<number>(0);
     const [ownedUnits, setOwnedUnits] = useState<string[]>([]);
     const [radarTheme, setRadarTheme] = useState<string>('green');
+    const [notificationEmail, setNotificationEmail] = useState<string>('');
+    const [emailEnabled, setEmailEnabled] = useState<boolean>(false);
 
     // Strategic Mode States
     const [viewMode, setViewMode] = useState<'tactical' | 'strategic'>('tactical');
@@ -85,6 +94,15 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
     const [activeTacticalScan, setActiveTacticalScan] = useState(false);
     const [fortifiedSectors, setFortifiedSectors] = useState<string[]>([]);
+
+
+    const updateSettings = async (email: string, enabled: boolean) => {
+        setNotificationEmail(email);
+        setEmailEnabled(enabled);
+        // Sync is handled by the effect, but for immediate UI changes we set state.
+        // Actually, explicit sync is better for settings to ensure persistence even if effect is debounced/laggy?
+        // But the effect covers it. We rely on the effect.
+    };
 
     const calculateActivePower = (garrisons: Record<string, Record<UnitType, number>>) => {
         const POWER = { guardsmen: 50, space_marine: 300, custodes: 1500, dreadnought: 500, baneblade: 5000 };
@@ -152,6 +170,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     if (gameState.armyStrength) setArmyStrength(gameState.armyStrength);
                     if (gameState.currentMonth !== undefined) setCurrentMonth(gameState.currentMonth);
                     if (gameState.sectorHistory) setSectorHistory(gameState.sectorHistory);
+                    if (gameState.notificationEmail) setNotificationEmail(gameState.notificationEmail);
+                    if (gameState.emailEnabled !== undefined) setEmailEnabled(gameState.emailEnabled);
                 }
                 setInitialized(true);
             } catch (err) {
@@ -181,12 +201,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 armyStrength,
                 currentMonth,
                 sectorHistory,
-                isPenitentMode
+                isPenitentMode,
+                notificationEmail,
+                emailEnabled
             }, token).catch(err => console.error("Sync Failed", err));
         }, 1000); // Debounce 1s
 
         return () => clearTimeout(timer);
-    }, [resources, corruption, ownedUnits, armyStrength, currentMonth, sectorHistory, isPenitentMode, initialized, user, getToken]);
+    }, [resources, corruption, ownedUnits, armyStrength, currentMonth, sectorHistory, isPenitentMode, notificationEmail, emailEnabled, initialized, user, getToken]);
 
     // Sector Traits Initialization
     const getTraitForMonth = (monthId: string): PlanetaryTraitType => {
@@ -868,7 +890,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             currentMonth, sectorHistory, resolveSector, advanceMonth,
             allTasks: tasks,
             activeTacticalScan, activateTacticalScan, fortifiedSectors, fortifySector, triggerBattlefieldMiracle,
-            debugSetResources, debugSetCorruption, debugSetArmyStrength
+            debugSetResources, debugSetCorruption, debugSetArmyStrength,
+            notificationEmail, emailEnabled, updateSettings,
+            modifyResources, modifyCorruption
         }}>
             {children}
         </GameContext.Provider>

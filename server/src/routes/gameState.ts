@@ -23,7 +23,9 @@ router.get('/', async (req, res) => {
                 is_penitent_mode: false,
                 army_strength: { reserves: { guardsmen: 0, spaceMarines: 0, custodes: 0, dreadnought: 0, baneblade: 0 }, garrisons: {}, totalActivePower: 0 },
                 sector_history: {},
-                owned_units: []
+                owned_units: [],
+                notification_email: '',
+                email_enabled: false
             };
         } else {
             row = result.rows[0];
@@ -37,7 +39,9 @@ router.get('/', async (req, res) => {
             isPenitentMode: row.is_penitent_mode,
             armyStrength: row.army_strength,
             sectorHistory: row.sector_history,
-            ownedUnits: row.owned_units
+            ownedUnits: row.owned_units,
+            notificationEmail: row.notification_email,
+            emailEnabled: row.email_enabled
         };
         res.json(gameState);
     } catch (err) {
@@ -65,6 +69,8 @@ router.post('/', async (req, res) => {
         if (state.armyStrength) { fields.push(`army_strength = $${idx++}`); values.push(state.armyStrength); }
         if (state.sectorHistory) { fields.push(`sector_history = $${idx++}`); values.push(state.sectorHistory); }
         if (state.ownedUnits) { fields.push(`owned_units = $${idx++}`); values.push(state.ownedUnits); }
+        if (state.notificationEmail !== undefined) { fields.push(`notification_email = $${idx++}`); values.push(state.notificationEmail); }
+        if (state.emailEnabled !== undefined) { fields.push(`email_enabled = $${idx++}`); values.push(state.emailEnabled); }
 
         if (fields.length === 0) return res.status(400).json({ message: 'No data to sync' });
 

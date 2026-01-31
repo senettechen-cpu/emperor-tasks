@@ -3,6 +3,7 @@ import { pool, query } from './db';
 import webpush from 'web-push';
 import dotenv from 'dotenv';
 import path from 'path';
+import { sendEmail } from './services/email';
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
@@ -74,6 +75,7 @@ export const startScheduler = () => {
             for (const task of upcomingTasks.rows) {
                 if (!task.user_id) continue;
 
+                // 1. Web Push Notification
                 // Find subscriptions for this user
                 const subs = await query(
                     `SELECT * FROM push_subscriptions WHERE user_id = $1`,
@@ -105,6 +107,38 @@ export const startScheduler = () => {
                             await query('DELETE FROM push_subscriptions WHERE id = $1', [sub.id]);
                         }
                     }
+                }
+
+                // 2. Email Notification (Astropathic Choir)
+                try {
+                    // Check if user has enabled email notifications
+                    const userState = await query(
+                        `SELECT email_enabled, notification_email FROM game_state WHERE user_id = $1`,
+                        [task.user_id]
+                    );
+
+                    if (userState.rows.length > 0) {
+                        const { email_enabled, notification_email } = userState.rows[0];
+
+                        if (email_enabled && notification_email) {
+                            const subject = `[IMPERIAL DECREE] 任務即將到期: ${task.title}`;
+                            const html = `
+                                <div style="font-family: monospace; background-color: #000; color: #fbbf24; padding: 20px; border: 2px solid #fbbf24;">
+                                    <h1 style="text-align: center; text-transform: uppercase; letter-spacing: 5px; border-bottom: 1px solid #fbbf24; padding-bottom: 10px;">Imperial Vox-Link</h1>
+                                    <p><strong>ATTENTION CITIZEN,</strong></p>
+                                    <p>Your task <strong>${task.title}</strong> is due in less than 10 minutes.</p>
+                                    <p>Time Remaining: <span style="color: red;">10 Minutes</span></p>
+                                    <hr style="border-color: #fbbf24; opacity: 0.3;" />
+                                    <p style="text-align: center; font-size: 12px; color: #666;">THE EMPEROR PROTECTS.</p>
+                                </div>
+                            `;
+
+                            await sendEmail(notification_email, subject, html);
+                            console.log(`[Scheduler] Email sent to ${notification_email} for task ${task.id}`);
+                        }
+                    }
+                } catch (emailError) {
+                    console.error('[Scheduler] Email notification failed:', emailError);
                 }
             }
 
