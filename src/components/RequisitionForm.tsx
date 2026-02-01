@@ -162,7 +162,7 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
                     backgroundColor: '#0a0f0d',
                     color: '#33ff00',
                     fontFamily: "'Share Tech Mono', monospace",
-                    backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.2) 0px, rgba(0,0,0,0.2) 1px, transparent 1px, transparent 2px)', // Scanlines
+                    backgroundImage: 'repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.2) 0px, rgba(0, 0, 0, 0.2) 1px, transparent 1px, transparent 2px)',
                 },
                 content: { backgroundColor: '#0a0f0d' }
             }}
