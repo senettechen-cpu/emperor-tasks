@@ -170,6 +170,21 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
     }
   }, [resources.rp]);
 
+  // Exclusive Modal Logic
+  const openLedger = () => {
+    setIsLedgerOpen(true);
+    setIsArmoryOpen(false);
+    setIsVoxLinkOpen(false);
+    setIsShopOpen(false);
+  };
+
+  const openArmory = () => {
+    setIsArmoryOpen(true);
+    setIsLedgerOpen(false);
+    setIsVoxLinkOpen(false);
+    setIsShopOpen(false);
+  };
+
   const currentActiveTasks = slateViewMode === 'mandates' ? allTasks : tasks;
   const selectedTask = useMemo(() => currentActiveTasks.find(t => t.id === selectedTaskId), [selectedTaskId, currentActiveTasks]);
 
@@ -269,7 +284,7 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
                 ghost
                 className="!border-[#c5a059]/50 !text-[#c5a059] hover:!bg-[#c5a059]/20 font-mono"
                 icon={<Scroll size={16} />}
-                onClick={() => setIsLedgerOpen(true)}
+                onClick={openLedger}
               >
                 LOGISTICS
               </Button>
@@ -362,7 +377,7 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
         )}
       </main>
 
-      <NavigationArray onOpenArmory={() => setIsArmoryOpen(true)} />
+      <NavigationArray onOpenArmory={openArmory} />
 
       <UnitShop visible={isShopOpen} onClose={() => setIsShopOpen(false)} glory={resources.glory} onBuy={(unit) => buyUnit(unit.id, unit.cost)} ownedUnitIds={ownedUnits} />
 
