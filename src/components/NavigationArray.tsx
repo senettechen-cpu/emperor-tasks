@@ -1,9 +1,10 @@
 import React from 'react';
 import { useGame } from '../contexts/GameContext';
-import { Radar, Map, ShoppingCart } from 'lucide-react';
+import { Radar, Map, ShoppingCart, Scroll } from 'lucide-react';
 
 interface NavigationArrayProps {
     onOpenArmory: () => void;
+    onOpenLedger: () => void;
 }
 
 export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory }) => {
@@ -95,7 +96,16 @@ export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory }
                 className="h-10 px-4 md:px-6 flex items-center gap-2 font-mono tracking-widest text-xs border border-zinc-800 bg-black text-imperial-gold hover:bg-imperial-gold hover:text-black transition-all shrink-0 ml-4"
             >
                 <ShoppingCart size={16} />
-                <span>軍械庫 [<span>{resources.rp}</span> RP]</span>
+                <span>軍械庫</span>
+            </button>
+
+            {/* Logistics Toggle (New) */}
+            <button
+                onClick={onOpenLedger}
+                className="h-10 px-4 md:px-6 flex items-center gap-2 font-mono tracking-widest text-xs border border-zinc-800 bg-black text-[#c5a059] hover:bg-[#c5a059] hover:text-black transition-all shrink-0 ml-2"
+            >
+                <Scroll size={16} />
+                <span>後勤</span>
             </button>
         </div>
     );

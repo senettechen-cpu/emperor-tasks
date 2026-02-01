@@ -185,6 +185,13 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
     setIsShopOpen(false);
   };
 
+  const openShop = () => {
+    setIsShopOpen(true);
+    setIsArmoryOpen(false);
+    setIsLedgerOpen(false);
+    setIsVoxLinkOpen(false);
+  };
+
   const currentActiveTasks = slateViewMode === 'mandates' ? allTasks : tasks;
   const selectedTask = useMemo(() => currentActiveTasks.find(t => t.id === selectedTaskId), [selectedTaskId, currentActiveTasks]);
 
@@ -234,7 +241,7 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
               {formatDate(currentTime).split(' ')[0]} <span className="text-xs md:text-lg">{formatDate(currentTime).split(' ')[1]}</span>
             </span>
           </div>
-          <div className="flex flex-col items-end md:hidden" onClick={() => setIsShopOpen(true)}>
+          <div className="flex flex-col items-end md:hidden" onClick={openShop}>
             <div className="flex items-center gap-2">
               <span className="text-imperial-gold device-font text-xl">{resources.rp} RP</span>
             </div>
@@ -260,7 +267,7 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
           </div>
         </div>
 
-        <div className="hidden md:flex gap-8 items-center cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setIsShopOpen(true)}>
+        <div className="hidden md:flex gap-8 items-center cursor-pointer hover:opacity-80 transition-opacity" onClick={openShop}>
           <div className="text-right relative">
             <span className="block text-imperial-gold/50 text-xs tracking-wider">帝皇之怒 (RP)</span>
             <div className="flex items-center justify-end gap-2">
@@ -377,7 +384,7 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
         )}
       </main>
 
-      <NavigationArray onOpenArmory={openArmory} />
+      <NavigationArray onOpenArmory={openArmory} onOpenLedger={openLedger} />
 
       <UnitShop visible={isShopOpen} onClose={() => setIsShopOpen(false)} glory={resources.glory} onBuy={(unit) => buyUnit(unit.id, unit.cost)} ownedUnitIds={ownedUnits} />
 

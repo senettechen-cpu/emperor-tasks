@@ -7,6 +7,7 @@ import { Expense, ExpenseCategory, PaymentMethod } from '../types/ledger';
 import { EXPENSE_CATEGORIES, PAYMENT_METHODS } from '../constants/ledger';
 
 import { useAuth } from '../contexts/AuthContext';
+import { useGame } from '../contexts/GameContext';
 
 interface RequisitionFormProps {
     visible: boolean;
@@ -18,6 +19,7 @@ interface RequisitionFormProps {
 export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClose }) => {
     // Auth
     const { getToken } = useAuth();
+    const { modifyResources } = useGame();
 
     // Form State
     const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -95,6 +97,9 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
             if (!token) throw new Error("No Cogitator Link (Offline)");
 
             await import('../services/api').then(m => m.api.addExpense(newExpense, token));
+
+            // Reward Glory
+            modifyResources(0, 50, "Ledger Entry (Requisition Filed)");
 
             // Play Sound (Mock)
             const audio = new Audio('/sounds/deploy.mp3');
