@@ -30,7 +30,11 @@ import authRoutes from './routes/auth';
 app.use('/api/auth', authRoutes); // Public route for login
 
 import logRoutes from './routes/logs';
+import logRoutes from './routes/logs';
 app.use('/api/logs', verifyToken, logRoutes);
+
+import ledgerRoutes from './routes/ledger';
+app.use('/api/ledger', verifyToken, ledgerRoutes);
 
 import notificationRoutes from './routes/notifications';
 app.use('/api/notifications', verifyToken, notificationRoutes);

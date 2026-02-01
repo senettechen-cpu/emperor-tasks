@@ -133,5 +133,29 @@ export const api = {
         });
         if (!response.ok) throw new Error('Failed to fetch logs');
         return response.json();
+    },
+
+    // Ledger
+    getExpenses: async (token?: string): Promise<any[]> => {
+        const response = await fetch(`${API_URL}/ledger`, { headers: getHeaders(token) });
+        if (!response.ok) throw new Error('Failed to fetch expenses');
+        return response.json();
+    },
+
+    addExpense: async (expense: any, token?: string): Promise<void> => {
+        const response = await fetch(`${API_URL}/ledger`, {
+            method: 'POST',
+            headers: getHeaders(token),
+            body: JSON.stringify(expense)
+        });
+        if (!response.ok) throw new Error('Failed to add expense');
+    },
+
+    deleteExpense: async (id: string, token?: string): Promise<void> => {
+        const response = await fetch(`${API_URL}/ledger/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders(token)
+        });
+        if (!response.ok) throw new Error('Failed to delete expense');
     }
 };

@@ -71,6 +71,19 @@ const schemaSql = `
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS idx_push_user_id ON push_subscriptions(user_id);
+
+    -- Ledger Expenses Table
+    CREATE TABLE IF NOT EXISTS expenses (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        date TIMESTAMP WITH TIME ZONE NOT NULL,
+        category TEXT NOT NULL,
+        item_name TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        payment_method TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON expenses(user_id);
 `;
 
 const initDb = async () => {

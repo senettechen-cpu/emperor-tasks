@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { ConfigProvider, Input, Typography, theme, Button } from 'antd'
 import zhTW from 'antd/locale/zh_TW'
-import { Plus, ShoppingCart, AlertTriangle, Map as MapIcon, Radar, Mail } from 'lucide-react'
+import { Plus, ShoppingCart, AlertTriangle, Map as MapIcon, Radar, Mail, Scroll } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RadarView } from './components/RadarView' // Keep old one just in case, or remove
 import { OrbitalRadar } from './components/OrbitalRadar'
@@ -10,6 +10,7 @@ import { UnitShop } from './components/UnitShop'
 import { AddTaskModal } from './components/AddTaskModal'
 import { VoxLinkModal } from './components/VoxLinkModal'
 import { Armory } from './components/Armory'
+import { RequisitionForm } from './components/RequisitionForm'
 import { NavigationArray } from './components/NavigationArray'
 import { SectorMap } from './components/SectorMap'
 import TaskDataSlate from './components/TaskDataSlate' // Added
@@ -154,6 +155,7 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
   const [isArmoryOpen, setIsArmoryOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isVoxLinkOpen, setIsVoxLinkOpen] = useState(false);
+  const [isLedgerOpen, setIsLedgerOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [slateViewMode, setSlateViewMode] = useState<'active' | 'mandates'>('active');
@@ -265,6 +267,14 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
               </Button>
               <Button
                 ghost
+                className="!border-[#c5a059]/50 !text-[#c5a059] hover:!bg-[#c5a059]/20 font-mono"
+                icon={<Scroll size={16} />}
+                onClick={() => setIsLedgerOpen(true)}
+              >
+                LOGISTICS
+              </Button>
+              <Button
+                ghost
                 danger
                 className="!border-red-900 !text-red-700 hover:!bg-red-900/20 font-mono"
                 onClick={(e) => { e.stopPropagation(); onLogout(); }}
@@ -370,6 +380,8 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
       <Armory visible={isArmoryOpen} onClose={() => setIsArmoryOpen(false)} />
 
       <VoxLinkModal visible={isVoxLinkOpen} onClose={() => setIsVoxLinkOpen(false)} />
+
+      <RequisitionForm visible={isLedgerOpen} onClose={() => setIsLedgerOpen(false)} />
     </div>
   );
 }
