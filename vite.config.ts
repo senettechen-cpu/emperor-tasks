@@ -12,6 +12,9 @@ export default defineConfig({
       filename: 'sw.js',
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB Limit
+      },
       manifest: {
         name: 'Empire Tasks System',
         short_name: 'EmpireTasks',
@@ -37,4 +40,16 @@ export default defineConfig({
   optimizeDeps: {
     include: ['antd', 'dayjs', '@ant-design/icons', 'framer-motion', 'lucide-react'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          antd: ['antd', '@ant-design/icons'],
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          motion: ['framer-motion']
+        }
+      }
+    }
+  }
 })
