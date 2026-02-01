@@ -7,7 +7,7 @@ interface NavigationArrayProps {
     onOpenLedger: () => void;
 }
 
-export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory }) => {
+export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory, onOpenLedger }) => {
     const { viewMode, setViewMode, resources, exportSTC, importSTC } = useGame();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
