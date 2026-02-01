@@ -37,6 +37,15 @@ export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory, 
             />
 
             <div className="flex gap-4 h-full items-center shrink-0">
+                {/* Logistics Toggle (Far Left) */}
+                <button
+                    onClick={onOpenLedger}
+                    className="h-10 px-4 md:px-6 flex items-center gap-2 font-mono tracking-widest text-xs border border-zinc-800 bg-black text-[#c5a059] hover:bg-[#c5a059] hover:text-black transition-all shrink-0"
+                >
+                    <Scroll size={16} />
+                    <span>後勤</span>
+                </button>
+
                 {/* Tactical View Toggle */}
                 <button
                     onClick={() => setViewMode('tactical')}
@@ -49,20 +58,6 @@ export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory, 
                 >
                     <Radar size={16} />
                     <span>戰術視圖</span>
-                </button>
-
-                {/* Strategic View Toggle */}
-                <button
-                    onClick={() => setViewMode('strategic')}
-                    className={`
-                        h-10 px-6 flex items-center gap-2 font-mono tracking-widest text-xs border transition-all duration-300
-                        ${viewMode === 'strategic'
-                            ? 'border-imperial-gold bg-imperial-gold/20 text-imperial-gold shadow-[0_0_15px_rgba(251,191,36,0.3)]'
-                            : 'border-zinc-800 bg-black text-zinc-500 hover:border-imperial-gold/50 hover:text-imperial-gold/70'}
-                    `}
-                >
-                    <Map size={16} />
-                    <span>戰略地圖</span>
                 </button>
 
                 {/* STC Operations */}
@@ -91,6 +86,20 @@ export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory, 
             </div>
 
             <div className="flex gap-2 items-center shrink-0">
+                {/* Strategic View Toggle (Moved to Right) */}
+                <button
+                    onClick={() => setViewMode('strategic')}
+                    className={`
+                        h-10 px-6 flex items-center gap-2 font-mono tracking-widest text-xs border transition-all duration-300
+                        ${viewMode === 'strategic'
+                            ? 'border-imperial-gold bg-imperial-gold/20 text-imperial-gold shadow-[0_0_15px_rgba(251,191,36,0.3)]'
+                            : 'border-zinc-800 bg-black text-zinc-500 hover:border-imperial-gold/50 hover:text-imperial-gold/70'}
+                    `}
+                >
+                    <Map size={16} />
+                    <span>戰略地圖</span>
+                </button>
+
                 {/* Armory Toggle */}
                 <button
                     onClick={onOpenArmory}
@@ -98,15 +107,6 @@ export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory, 
                 >
                     <ShoppingCart size={16} />
                     <span>軍械庫</span>
-                </button>
-
-                {/* Logistics Toggle (New) */}
-                <button
-                    onClick={onOpenLedger}
-                    className="h-10 px-4 md:px-6 flex items-center gap-2 font-mono tracking-widest text-xs border border-zinc-800 bg-black text-[#c5a059] hover:bg-[#c5a059] hover:text-black transition-all shrink-0"
-                >
-                    <Scroll size={16} />
-                    <span>後勤</span>
                 </button>
             </div>
         </div>
