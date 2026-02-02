@@ -625,7 +625,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setProjects(prev => prev.map(p => {
             if (p.id !== projectId) return p;
             const newSubTasks = p.subTasks.map(t => t.id === subTaskId ? { ...t, title } : t);
-            api.updateProject(p.id, { subTasks: newSubTasks }).catch(console.error);
+            getToken().then(token => {
+                if (token) api.updateProject(p.id, { subTasks: newSubTasks }, token).catch(console.error);
+            });
             return { ...p, subTasks: newSubTasks };
         }));
     };
@@ -634,7 +636,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setProjects(prev => prev.map(p => {
             if (p.id !== projectId) return p;
             const newSubTasks = p.subTasks.filter(t => t.id !== subTaskId);
-            api.updateProject(p.id, { subTasks: newSubTasks }).catch(console.error);
+            getToken().then(token => {
+                if (token) api.updateProject(p.id, { subTasks: newSubTasks }, token).catch(console.error);
+            });
             return { ...p, subTasks: newSubTasks };
         }));
     };
@@ -685,7 +689,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const newGarrisons = { ...prev.garrisons, [monthId]: newGarrison };
             const newTotalPower = calculateActivePower(newGarrisons);
 
-            return { reserves: newReserves, garrisons: newGarrisons, totalActivePower: newTotalPower };
+            const newState = { reserves: newReserves, garrisons: newGarrisons, totalActivePower: newTotalPower };
+
+            // Force Sync
+            getToken().then(token => {
+                if (token) api.syncGameState({ ...api.getGameState(token), armyStrength: newState, resources }, token);
+            });
+
+            return newState;
         });
     };
 
@@ -700,7 +711,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const newReserves = { ...prev.reserves, [type]: (prev.reserves[type] || 0) + count };
             const newTotalPower = calculateActivePower(newGarrisons);
 
-            return { reserves: newReserves, garrisons: newGarrisons, totalActivePower: newTotalPower };
+            const newState = { reserves: newReserves, garrisons: newGarrisons, totalActivePower: newTotalPower };
+
+            // Force Sync
+            getToken().then(token => {
+                if (token) api.syncGameState({ ...api.getGameState(token), armyStrength: newState, resources }, token);
+            });
+
+            return newState;
         });
     };
 
