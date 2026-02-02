@@ -171,7 +171,7 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
                 },
                 content: { backgroundColor: '#0a0f0d' }
             }}
-            closeIcon={<span className="text-[#33ff00]">✕</span>}
+            closeIcon={<span className="text-[#33ff00] text-3xl font-bold p-2">✕</span>}
             className="imperial-ledger-drawer"
         >
             <div className={`flex flex-col gap-6 relative h-full ${isSlaaneshCorrupted ? 'glitch-container' : ''}`}>
@@ -206,12 +206,15 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
                     <label className="text-[#c5a059] text-xs uppercase tracking-widest">Requisition Protocol</label>
 
                     {/* Date */}
-                    <Input
-                        type="date"
-                        value={date}
-                        onChange={e => setDate(e.target.value)}
-                        className="!bg-black !text-[#33ff00] !border-[#c5a059]/50 font-mono"
-                    />
+                    <div className="w-full">
+                        <Input
+                            type="date"
+                            value={date}
+                            onChange={e => setDate(e.target.value)}
+                            className="!bg-black !text-[#33ff00] !border-[#c5a059]/50 font-mono w-full"
+                            style={{ maxWidth: '100%' }}
+                        />
+                    </div>
 
                     {/* Category */}
                     <Select
@@ -241,11 +244,15 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
                     {/* Amount */}
                     <Input
                         type="number"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
                         placeholder="消耗點數 / Cost"
                         value={amount}
+                        // @ts-ignore
+                        onFocus={(e) => e.target.select()}
                         onChange={e => setAmount(Number(e.target.value))}
                         prefix={<span className="text-[#c5a059]">₮</span>}
-                        className="!bg-black !text-[#33ff00] !border-[#c5a059]/50 font-mono placeholder:!text-[#33ff00]/30"
+                        className="!bg-black !text-[#33ff00] !border-[#c5a059]/50 font-mono placeholder:!text-[#33ff00]/30 text-lg"
                     />
 
                     {/* Payment Method */}
@@ -262,16 +269,14 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
                     {/* Actions */}
                     <div className="flex gap-2 mt-2">
                         <Button
-                            block
                             onClick={onClose}
-                            className="!bg-red-900/20 !text-red-500 !border-red-900/50 font-mono tracking-widest hover:!bg-red-900/40"
+                            className="flex-1 !bg-red-900/20 !text-red-500 !border-red-900/50 font-mono tracking-widest hover:!bg-red-900/40 h-auto py-2 whitespace-normal leading-tight"
                         >
                             駁回申請 (DENY)
                         </Button>
                         <Button
-                            block
                             onClick={handleSubmit}
-                            className="!bg-[#c5a059] !text-black !border-[#c5a059] font-mono font-bold tracking-widest hover:!bg-[#e6c278] hover:!text-black"
+                            className="flex-1 !bg-[#c5a059] !text-black !border-[#c5a059] font-mono font-bold tracking-widest hover:!bg-[#e6c278] hover:!text-black h-auto py-2 whitespace-normal leading-tight"
                         >
                             批准徵用 (AUTHORIZE)
                         </Button>
