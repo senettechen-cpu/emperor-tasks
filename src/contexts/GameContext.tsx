@@ -693,7 +693,19 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Force Sync
             getToken().then(token => {
-                if (token) api.syncGameState({ ...api.getGameState(token), armyStrength: newState, resources }, token);
+                if (token) {
+                    api.syncGameState({
+                        resources,
+                        corruption,
+                        ownedUnits,
+                        armyStrength: newState,
+                        currentMonth,
+                        sectorHistory,
+                        isPenitentMode,
+                        notificationEmail,
+                        emailEnabled
+                    }, token).catch(console.error);
+                }
             });
 
             return newState;
@@ -715,7 +727,19 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Force Sync
             getToken().then(token => {
-                if (token) api.syncGameState({ ...api.getGameState(token), armyStrength: newState, resources }, token);
+                if (token) {
+                    api.syncGameState({
+                        resources,
+                        corruption,
+                        ownedUnits,
+                        armyStrength: newState,
+                        currentMonth,
+                        sectorHistory,
+                        isPenitentMode,
+                        notificationEmail,
+                        emailEnabled
+                    }, token).catch(console.error);
+                }
             });
 
             return newState;
