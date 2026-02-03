@@ -74,11 +74,20 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
     const moralePercentage = totalCost > 0 ? (moraleCost / totalCost) * 100 : 0;
     const isSlaaneshCorrupted = moralePercentage > 30;
 
-    // Aggregated Data
-    const groupedExpenses = useMemo(() => {
-        if (statsViewMode === 'list') return expenses;
 
-        const groups: Record<string, { id: string, label: string, amount: number, count: number, items: Expense[] }> = {};
+    interface GroupedExpense {
+        id: string;
+        label: string;
+        amount: number;
+        count: number;
+        items: Expense[];
+    }
+
+    // Aggregated Data
+    const groupedExpenses = useMemo<GroupedExpense[]>(() => {
+        if (statsViewMode === 'list') return [];
+
+        const groups: Record<string, GroupedExpense> = {};
 
         expenses.forEach(item => {
             const key = statsViewMode === 'category' ? item.category : new Date(item.date).toISOString().split('T')[0];
@@ -98,9 +107,9 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
             groups[key].items.push(item);
         });
 
-        // @ts-ignore
         return Object.values(groups).sort((a, b) => b.amount - a.amount);
     }, [expenses, statsViewMode]);
+
 
 
     // Handlers
@@ -383,7 +392,6 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
                             ) : (
                                 // Aggregated List (Category / Date)
                                 <div className="p-4 grid gap-4">
-                                    {/* @ts-ignore */}
                                     {groupedExpenses.map((group) => (
                                         <div key={group.id} className="border border-[#c5a059]/30 bg-[#0a0f0d] p-4 rounded hover:border-[#c5a059] transition-colors">
                                             <div className="flex justify-between items-center mb-2">
