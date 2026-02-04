@@ -18,6 +18,7 @@ export const AscensionTracker: React.FC<AscensionTrackerProps> = ({ visible, onC
     const isMobile = !screens.md;
     const { astartes } = useAscension();
     const [highlightedImplantId, setHighlightedImplantId] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'surgery' | 'rituals'>('surgery');
 
     if (!visible) return null;
 
@@ -109,29 +110,42 @@ export const AscensionTracker: React.FC<AscensionTrackerProps> = ({ visible, onC
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative z-10">
-                {/* Left Panel: Body Graph */}
-                <div className="w-full md:w-5/12 h-[50vh] md:h-full p-6 md:p-12 flex items-center justify-center relative border-r border-imperial-gold/10 bg-black/40 backdrop-blur-sm">
-                    <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(0,0,0,0)_49.9%,rgba(251,191,36,0.05)_50%,rgba(0,0,0,0)_50.1%)] bg-[length:20px_20px] opacity-20 pointer-events-none" />
+                {/* Left Panel: Body Graph - Hidden on mobile if in Rituals tab for simplicity */}
+                {(!isMobile || activeTab === 'surgery') && (
+                    <div className={`
+                        w-full md:w-5/12 p-6 md:p-12 flex items-center justify-center relative border-r border-imperial-gold/10 bg-black/40 backdrop-blur-sm
+                        ${isMobile ? 'h-[40vh]' : 'h-full'}
+                    `}>
+                        <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(0,0,0,0)_49.9%,rgba(251,191,36,0.05)_50%,rgba(0,0,0,0)_50.1%)] bg-[length:20px_20px] opacity-20 pointer-events-none" />
 
-                    <BodyGraph
-                        unlockedImplants={astartes.unlockedImplants}
-                        onImplantClick={(id) => console.log(id)}
-                    />
+                        <BodyGraph
+                            unlockedImplants={astartes.unlockedImplants}
+                            onImplantClick={(id) => console.log(id)}
+                        />
 
-                    {/* Decorative Info Panel */}
-                    <div className="absolute top-8 left-8 p-4 border-l-2 border-imperial-gold/30 bg-black/60 backdrop-blur-md">
-                        <div className="text-imperial-gold/40 font-mono text-[10px] tracking-widest mb-1">TARGET_SUBJECT</div>
-                        <div className="text-zinc-300 font-mono text-sm tracking-wider">RECRUIT #739-GAMMA</div>
-                        <div className="text-emerald-500/80 font-mono text-[10px] tracking-widest mt-2 animate-pulse">STATUS: AUGMENTATION</div>
+                        {/* Decorative Info Panel */}
+                        <div className="absolute top-8 left-8 p-4 border-l-2 border-imperial-gold/30 bg-black/60 backdrop-blur-md">
+                            <div className="text-imperial-gold/40 font-mono text-[10px] tracking-widest mb-1">TARGET_SUBJECT</div>
+                            <div className="text-zinc-300 font-mono text-sm tracking-wider">RECRUIT #739-GAMMA</div>
+                            <div className="text-emerald-500/80 font-mono text-[10px] tracking-widest mt-2 animate-pulse">STATUS: AUGMENTATION</div>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Right Panel: Terminal */}
-                <div className="w-full md:w-7/12 h-full relative z-20">
+                <div className={`
+                    relative z-20 
+                    ${isMobile && activeTab === 'rituals' ? 'w-full h-full' : 'w-full md:w-7/12 h-full'}
+                `}>
                     <div className="absolute inset-0 bg-black/80 pointer-events-none" /> {/* Dimmer base */}
-                    <ImplantTerminal onSelectImplant={setHighlightedImplantId} />
+                    <ImplantTerminal
+                        onSelectImplant={setHighlightedImplantId}
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                    />
                 </div>
             </div>
         </div>
+
     );
 };

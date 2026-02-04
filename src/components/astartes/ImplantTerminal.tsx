@@ -13,13 +13,14 @@ const { Title, Paragraph } = Typography;
 
 interface ImplantTerminalProps {
     onSelectImplant: (id: string) => void;
+    activeTab: 'surgery' | 'rituals';
+    setActiveTab: (tab: 'surgery' | 'rituals') => void;
 }
 
-export const ImplantTerminal: React.FC<ImplantTerminalProps> = ({ onSelectImplant }) => {
+export const ImplantTerminal: React.FC<ImplantTerminalProps> = ({ onSelectImplant, activeTab, setActiveTab }) => {
     const { astartes, currentStageId, canUnlock, unlockImplant } = useAscension();
     const { modifyAstartesResources, addRitualActivity, updateRitualActivity, deleteRitualActivity } = useGame();
     const [selectedImplantId, setSelectedImplantId] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'surgery' | 'rituals'>('surgery');
 
     // Management State
     const [isAddingToCategory, setIsAddingToCategory] = useState<AscensionCategory | null>(null);
