@@ -113,6 +113,47 @@ body {
   }
 }
 
+@keyframes pulse-fast {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-fast {
+  animation: pulse-fast 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes hologram-flicker {
+  0% { opacity: 0.9; }
+  5% { opacity: 0.8; }
+  10% { opacity: 0.9; }
+  15% { opacity: 0.4; }
+  20% { opacity: 0.9; }
+  40% { opacity: 0.9; }
+  45% { opacity: 0.6; }
+  50% { opacity: 0.9; }
+  100% { opacity: 0.9; }
+}
+
+.animate-hologram {
+  animation: hologram-flicker 4s infinite;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: rgba(10, 15, 13, 0.85); 
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(251, 191, 36, 0.3); /* Imperial Gold / 30% */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.glass-panel-hover:hover {
+  background: rgba(10, 15, 13, 0.95);
+  border-color: rgba(251, 191, 36, 0.8);
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
+}
+
+
 .glitch-text {
   position: relative;
 }

@@ -1,13 +1,14 @@
 import React from 'react';
 import { useGame } from '../contexts/GameContext';
-import { Radar, Map, ShoppingCart, Scroll } from 'lucide-react';
+import { Radar, Map, ShoppingCart, Scroll, Activity } from 'lucide-react';
 
 interface NavigationArrayProps {
     onOpenArmory: () => void;
     onOpenLedger: () => void;
+    onOpenAscension: () => void;
 }
 
-export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory, onOpenLedger }) => {
+export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory, onOpenLedger, onOpenAscension }) => {
     const { viewMode, setViewMode, resources, exportSTC, importSTC } = useGame();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -44,6 +45,15 @@ export const NavigationArray: React.FC<NavigationArrayProps> = ({ onOpenArmory, 
                 >
                     <Scroll size={16} />
                     <span>後勤</span>
+                </button>
+
+                {/* Ascension Toggle */}
+                <button
+                    onClick={onOpenAscension}
+                    className="h-10 px-4 md:px-6 flex items-center gap-2 font-mono tracking-widest text-xs border border-zinc-800 bg-black text-emerald-500 hover:bg-emerald-500 hover:text-black transition-all shrink-0"
+                >
+                    <Activity size={16} />
+                    <span>改造計畫</span>
                 </button>
 
                 {/* Tactical View Toggle */}

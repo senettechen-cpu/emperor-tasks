@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { ConfigProvider, Input, Typography, theme, Button } from 'antd'
 import zhTW from 'antd/locale/zh_TW'
-import { Plus, ShoppingCart, AlertTriangle, Map as MapIcon, Radar, Mail, Scroll } from 'lucide-react'
+import { Plus, ShoppingCart, AlertTriangle, Map as MapIcon, Radar, Mail, Scroll, Activity } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RadarView } from './components/RadarView' // Keep old one just in case, or remove
 import { OrbitalRadar } from './components/OrbitalRadar'
@@ -14,6 +14,7 @@ import { RequisitionForm } from './components/RequisitionForm'
 import { NavigationArray } from './components/NavigationArray'
 import { SectorMap } from './components/SectorMap'
 import TaskDataSlate from './components/TaskDataSlate' // Added
+import { AscensionTracker } from './components/astartes/AscensionTracker'
 import { GameProvider, useGame } from './contexts/GameContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useAuth } from './contexts/AuthContext'
@@ -156,6 +157,7 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isVoxLinkOpen, setIsVoxLinkOpen] = useState(false);
   const [isLedgerOpen, setIsLedgerOpen] = useState(false);
+  const [isAscensionOpen, setIsAscensionOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [slateViewMode, setSlateViewMode] = useState<'active' | 'mandates'>('active');
@@ -176,6 +178,7 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
     setIsArmoryOpen(false);
     setIsVoxLinkOpen(false);
     setIsShopOpen(false);
+    setIsAscensionOpen(false);
   };
 
   const openArmory = () => {
@@ -183,6 +186,7 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
     setIsLedgerOpen(false);
     setIsVoxLinkOpen(false);
     setIsShopOpen(false);
+    setIsAscensionOpen(false);
   };
 
   const openShop = () => {
@@ -190,6 +194,15 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
     setIsArmoryOpen(false);
     setIsLedgerOpen(false);
     setIsVoxLinkOpen(false);
+    setIsAscensionOpen(false);
+  };
+
+  const openAscension = () => {
+    setIsAscensionOpen(true);
+    setIsLedgerOpen(false);
+    setIsArmoryOpen(false);
+    setIsVoxLinkOpen(false);
+    setIsShopOpen(false);
   };
 
   const currentActiveTasks = slateViewMode === 'mandates' ? allTasks : tasks;
@@ -285,7 +298,7 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
                 icon={<Mail size={16} />}
                 onClick={() => setIsVoxLinkOpen(true)}
               >
-                VOX-LINK
+                通訊鏈路
               </Button>
               <Button
                 ghost
@@ -293,15 +306,16 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
                 icon={<Scroll size={16} />}
                 onClick={openLedger}
               >
-                LOGISTICS
+                後勤總表
               </Button>
+
               <Button
                 ghost
                 danger
                 className="!border-red-900 !text-red-700 hover:!bg-red-900/20 font-mono"
                 onClick={(e) => { e.stopPropagation(); onLogout(); }}
               >
-                TERMINATE SESSION
+                終止連線
               </Button>
             </div>
           )}
@@ -403,16 +417,16 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
         )}
       </main>
 
-      <NavigationArray onOpenArmory={openArmory} onOpenLedger={openLedger} />
+      <NavigationArray onOpenArmory={openArmory} onOpenLedger={openLedger} onOpenAscension={openAscension} />
 
       <UnitShop visible={isShopOpen} onClose={() => setIsShopOpen(false)} glory={resources.glory} onBuy={(unit) => buyUnit(unit.id, unit.cost)} ownedUnitIds={ownedUnits} />
 
       <AddTaskModal
         visible={isAddModalOpen}
         onClose={() => { setIsAddModalOpen(false); setEditingTask(null); setKeyword(''); }}
-        onAdd={(title, faction, diff, date, isRec, dueTime) => {
-          if (editingTask) { updateTask(editingTask.id, { title, faction, difficulty: diff, dueDate: date, isRecurring: isRec, dueTime }); }
-          else { addTask(title, faction, diff, date, isRec, dueTime); }
+        onAdd={(title, faction, diff, date, isRec, dueTime, ascCat, subCat) => {
+          if (editingTask) { updateTask(editingTask.id, { title, faction, difficulty: diff, dueDate: date, isRecurring: isRec, dueTime, ascensionCategory: ascCat, subCategory: subCat }); }
+          else { addTask(title, faction, diff, date, isRec, dueTime, ascCat, subCat); }
         }}
         initialKeyword={keyword}
         initialTask={editingTask}
@@ -423,6 +437,8 @@ const MainDashboard = ({ currentUser, onLogout }: { currentUser: any, onLogout: 
       <VoxLinkModal visible={isVoxLinkOpen} onClose={() => setIsVoxLinkOpen(false)} />
 
       <RequisitionForm visible={isLedgerOpen} onClose={() => setIsLedgerOpen(false)} />
+
+      <AscensionTracker visible={isAscensionOpen} onClose={() => setIsAscensionOpen(false)} />
     </div>
   );
 }

@@ -12,7 +12,34 @@ export interface Task {
     lastCompletedAt?: Date; // 上次完成日期
     streak?: number; // 連續達成次數
     dueTime?: string; // 每日截止時間 "HH:mm"
+    ascensionCategory?: AscensionCategory;
+    subCategory?: string; // 子項目描述 (e.g. "跑步 5km")
 }
+
+export type AscensionCategory = 'exercise' | 'learning' | 'cleaning' | 'parenting';
+
+export interface AstartesResources {
+    adamantium: number; // 運動 -> Wolf Guard
+    neuroData: number;  // 學習 -> Imperial Fists
+    puritySeals: number; // 整潔 -> Grey Knights
+    geneLegacy: number; // 育嬰 -> Salamanders
+}
+
+export interface RitualActivity {
+    id: string;
+    name: string;
+    category: AscensionCategory;
+    baseDifficulty: number;
+}
+
+export interface AstartesState {
+    resources: AstartesResources;
+    unlockedImplants: string[];
+    completedStages: number[]; // 1, 2, 3, 4
+    ritualActivities?: Record<AscensionCategory, RitualActivity[]>; // Dynamic ritual list
+}
+
+
 
 export interface Resources {
     rp: number; // 帝皇之怒
@@ -42,7 +69,7 @@ export interface Project {
     completed: boolean;
 }
 
-export type UnitType = 'guardsmen' | 'space_marine' | 'custodes' | 'dreadnought' | 'baneblade';
+export type UnitType = 'guardsmen' | 'space_marine' | 'custodes' | 'dreadnought' | 'baneblade' | 'wolf_guard' | 'phalanx_warder' | 'purifier' | 'pyroclast' | 'redemptor_dreadnought';
 
 export interface ArmyStrength {
     reserves: Record<UnitType, number>;
@@ -71,6 +98,7 @@ export interface GameState {
     armyStrength: ArmyStrength;
     sectorHistory: SectorHistory;
     ownedUnits: string[];
+    astartes?: AstartesState;
     notificationEmail?: string;
     emailEnabled?: boolean;
 }

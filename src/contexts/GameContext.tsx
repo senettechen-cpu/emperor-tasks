@@ -1,7 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Task, Resources, Faction, Project, ArmyStrength, SectorTrait, PlanetaryTraitType, BattleResult, SectorHistory, UnitType } from '../types';
+import { Task, Resources, Faction, Project, ArmyStrength, SectorTrait, PlanetaryTraitType, BattleResult, SectorHistory, UnitType, AstartesState, AstartesResources, AscensionCategory, RitualActivity } from '../types';
 import { api } from '../services/api';
+import { RITUAL_ACTIVITIES } from '../data/astartesData';
+
 
 interface GameContextType {
     tasks: Task[];
@@ -9,7 +11,7 @@ interface GameContextType {
     corruption: number;
     ownedUnits: string[];
     isPenitentMode: boolean;
-    addTask: (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring?: boolean, dueTime?: string) => void;
+    addTask: (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring?: boolean, dueTime?: string, ascensionCategory?: AscensionCategory, subCategory?: string) => void;
     updateTask: (id: string, updates: Partial<Task>) => void;
     purgeTask: (id: string) => void;
     deleteTask: (id: string) => void;
@@ -64,7 +66,17 @@ interface GameContextType {
     debugSetResources: (res: Resources) => void;
     debugSetCorruption: (val: number) => void;
     debugSetArmyStrength: (army: ArmyStrength) => void;
+
+    // Astartes
+    astartes: AstartesState;
+    modifyAstartesResources: (changes: Partial<AstartesResources>, reason: string) => void;
+    updateAstartes: (newState: Partial<AstartesState>) => void;
+    grantAscensionReward: (units: UnitType[], glory?: number) => void;
+    addRitualActivity: (category: AscensionCategory, name: string, baseDifficulty: number) => void;
+    updateRitualActivity: (category: AscensionCategory, activityId: string, updates: Partial<RitualActivity>) => void;
+    deleteRitualActivity: (category: AscensionCategory, activityId: string) => void;
 }
+
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
@@ -83,12 +95,24 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [notificationEmail, setNotificationEmail] = useState<string>('');
     const [emailEnabled, setEmailEnabled] = useState<boolean>(false);
 
+    // Astartes State
+    const [astartes, setAstartes] = useState<AstartesState>({
+        resources: { adamantium: 0, neuroData: 0, puritySeals: 0, geneLegacy: 0 },
+        unlockedImplants: [],
+        completedStages: [],
+        ritualActivities: RITUAL_ACTIVITIES
+    });
+
+
     // Strategic Mode States
     const [viewMode, setViewMode] = useState<'tactical' | 'strategic'>('tactical');
     const [projects, setProjects] = useState<Project[]>([]);
 
     const [armyStrength, setArmyStrength] = useState<ArmyStrength>({
-        reserves: { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 },
+        reserves: {
+            guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0,
+            wolf_guard: 0, phalanx_warder: 0, purifier: 0, pyroclast: 0, redemptor_dreadnought: 0
+        },
         garrisons: {},
         totalActivePower: 0
     });
@@ -105,7 +129,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const calculateActivePower = (garrisons: Record<string, Record<UnitType, number>>) => {
-        const POWER = { guardsmen: 50, space_marine: 300, custodes: 1500, dreadnought: 500, baneblade: 5000 };
+        const POWER: Record<UnitType, number> = {
+            guardsmen: 50, space_marine: 300, custodes: 1500, dreadnought: 500, baneblade: 5000,
+            wolf_guard: 400, phalanx_warder: 400, purifier: 400, pyroclast: 400, redemptor_dreadnought: 2000
+        };
         let total = 0;
         Object.values(garrisons).forEach((g) => {
             total += (g.guardsmen || 0) * POWER.guardsmen;
@@ -113,6 +140,13 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             total += (g.custodes || 0) * POWER.custodes;
             total += (g.dreadnought || 0) * POWER.dreadnought;
             total += (g.baneblade || 0) * POWER.baneblade;
+
+            // Astartes Units
+            total += (g.wolf_guard || 0) * POWER.wolf_guard;
+            total += (g.phalanx_warder || 0) * POWER.phalanx_warder;
+            total += (g.purifier || 0) * POWER.purifier;
+            total += (g.pyroclast || 0) * POWER.pyroclast;
+            total += (g.redemptor_dreadnought || 0) * POWER.redemptor_dreadnought;
         });
         if (ownedUnits.includes('librarian')) total += 1000;
         if (ownedUnits.includes('barge')) total += 10000;
@@ -130,6 +164,66 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const modifyCorruption = (change: number, reason: string) => {
         setCorruption(prev => Math.max(0, Math.min(100, prev + change)));
         if (change !== 0) api.logResourceChange({ category: 'corruption', amount: change, reason });
+    };
+
+    const modifyAstartesResources = (changes: Partial<AstartesResources>, reason: string) => {
+        setAstartes(prev => {
+            const newRes = { ...prev.resources };
+            let logMsg = reason + ': ';
+            (Object.keys(changes) as (keyof AstartesResources)[]).forEach(k => {
+                const delta = changes[k] || 0;
+                newRes[k] = Math.max(0, newRes[k] + delta);
+                logMsg += `${k} ${delta > 0 ? '+' : ''}${delta} `;
+            });
+            console.log(logMsg); // Ideally log to backend too
+            return { ...prev, resources: newRes };
+        });
+    };
+
+    const updateAstartes = (newState: Partial<AstartesState>) => {
+        setAstartes(prev => ({ ...prev, ...newState }));
+    };
+
+    const addRitualActivity = (category: AscensionCategory, name: string, baseDifficulty: number) => {
+        setAstartes(prev => {
+            const currentActivities = prev.ritualActivities || RITUAL_ACTIVITIES;
+            const newActivity: RitualActivity = {
+                id: `dynamic-${Date.now()}`,
+                name,
+                category,
+                baseDifficulty
+            };
+            const updated = {
+                ...currentActivities,
+                [category]: [...(currentActivities[category] || []), newActivity]
+            };
+            return { ...prev, ritualActivities: updated };
+        });
+    };
+
+    const updateRitualActivity = (category: AscensionCategory, activityId: string, updates: Partial<RitualActivity>) => {
+        setAstartes(prev => {
+            const currentActivities = prev.ritualActivities || RITUAL_ACTIVITIES;
+            const updated = {
+                ...currentActivities,
+                [category]: (currentActivities[category] || []).map(a =>
+                    a.id === activityId ? { ...a, ...updates } : a
+                )
+
+            };
+            return { ...prev, ritualActivities: updated };
+        });
+    };
+
+    const deleteRitualActivity = (category: AscensionCategory, activityId: string) => {
+        setAstartes(prev => {
+            const currentActivities = prev.ritualActivities || RITUAL_ACTIVITIES;
+            const updated = {
+                ...currentActivities,
+                [category]: (currentActivities[category] || []).filter(a => a.id !== activityId)
+            };
+            return { ...prev, ritualActivities: updated };
+        });
     };
 
     // Time & Battle Resolution State
@@ -172,6 +266,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     if (gameState.sectorHistory) setSectorHistory(gameState.sectorHistory);
                     if (gameState.notificationEmail) setNotificationEmail(gameState.notificationEmail);
                     if (gameState.emailEnabled !== undefined) setEmailEnabled(gameState.emailEnabled);
+                    if (gameState.astartes) setAstartes(gameState.astartes);
                 }
                 setInitialized(true);
             } catch (err) {
@@ -201,9 +296,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 armyStrength,
                 currentMonth,
                 sectorHistory,
+
                 isPenitentMode,
                 notificationEmail,
-                emailEnabled
+                emailEnabled,
+                astartes
             }, token).catch(err => console.error("Sync Failed", err));
         }, 1000); // Debounce 1s
 
@@ -325,7 +422,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [corruption]);
 
     // Actions
-    const addTask = async (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring: boolean = false, dueTime?: string) => {
+    const addTask = async (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring: boolean = false, dueTime?: string, ascensionCategory?: AscensionCategory, subCategory?: string) => {
         const newTask: Task = {
             id: Date.now().toString(36) + Math.random().toString(36).substr(2),
             title,
@@ -336,7 +433,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             status: 'active',
             isRecurring,
             streak: 0,
-            dueTime
+            dueTime,
+            ascensionCategory,
+            subCategory
         };
 
         // Optimistic Update
@@ -475,6 +574,17 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
         }
 
+        const task = tasks.find(t => t.id === id);
+        if (task && task.ascensionCategory) {
+            const difficulty = task.difficulty || 1;
+            const amount = difficulty * 10;
+            switch (task.ascensionCategory) {
+                case 'exercise': modifyAstartesResources({ adamantium: amount }, "Task: Exercise"); break;
+                case 'learning': modifyAstartesResources({ neuroData: amount }, "Task: Learning"); break;
+                case 'cleaning': modifyAstartesResources({ puritySeals: amount }, "Task: Cleaning"); break;
+                case 'parenting': modifyAstartesResources({ geneLegacy: amount }, "Task: Parenting"); break;
+            }
+        }
 
         modifyResources(rpReward, 5, `Task Completed: ${tasks.find(t => t.id === id)?.title || 'Unknown'}`);
         modifyCorruption(-2, "Task Completed: Purification");
@@ -651,7 +761,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const recruitUnit = (type: UnitType) => {
-        const COSTS = { guardsmen: 300, space_marine: 1500, custodes: 4500, dreadnought: 100, baneblade: 2000 };
+        const COSTS: Record<UnitType, number> = {
+            guardsmen: 300, space_marine: 1500, custodes: 4500, dreadnought: 100, baneblade: 2000,
+            wolf_guard: 2000, phalanx_warder: 2000, purifier: 2000, pyroclast: 2000, redemptor_dreadnought: 10000
+        };
         let cost = COSTS[type];
 
         const currentMonthIdx = new Date().getMonth();
@@ -737,13 +850,40 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         sectorHistory,
                         isPenitentMode,
                         notificationEmail,
-                        emailEnabled
+                        emailEnabled,
+                        astartes
                     }, token).catch(console.error);
                 }
             });
 
             return newState;
         });
+    };
+
+    const grantAscensionReward = (units: UnitType[], glory: number = 0) => {
+        // 1. Add to Reserves
+        setArmyStrength(prev => {
+            const newReserves = { ...prev.reserves };
+            units.forEach(u => {
+                newReserves[u] = (newReserves[u] || 0) + 1;
+            });
+            // Update total power is not needed as reserves don't count for defense yet, only garrisons?
+            // But we should keep structure consistent.
+            return { ...prev, reserves: newReserves };
+        });
+
+        // 2. Unlock Purchase Rights
+        setOwnedUnits(prev => {
+            const newOwned = [...prev];
+            units.forEach(u => {
+                const unlockKey = `unlock_${u}`;
+                if (!newOwned.includes(unlockKey)) newOwned.push(unlockKey);
+            });
+            return newOwned;
+        });
+
+        // 3. Grant Glory
+        if (glory > 0) modifyResources(0, glory, "Ascension Reward");
     };
 
     const activateTacticalScan = () => {
@@ -934,7 +1074,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             activeTacticalScan, activateTacticalScan, fortifiedSectors, fortifySector, triggerBattlefieldMiracle,
             debugSetResources, debugSetCorruption, debugSetArmyStrength,
             notificationEmail, emailEnabled, updateSettings,
-            modifyResources, modifyCorruption
+            modifyResources, modifyCorruption,
+            astartes, modifyAstartesResources, updateAstartes, grantAscensionReward,
+            addRitualActivity, updateRitualActivity, deleteRitualActivity
         }}>
             {children}
         </GameContext.Provider>

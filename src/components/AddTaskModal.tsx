@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Input, Slider, DatePicker, Select, Button, Typography, Checkbox, Radio, Drawer, Grid } from 'antd';
-import { Task, Faction } from '../types';
+import { Task, Faction, AscensionCategory } from '../types';
 import { useGame } from '../contexts/GameContext';
-import { Activity, Sword, Target, Shield, Skull, Zap } from 'lucide-react'; // Icons for factions
+import { Home, Activity, Book, Heart, Hammer, Cpu } from 'lucide-react'; // Icons for factions
 import dayjs from 'dayjs';
 
 const { useBreakpoint } = Grid;
@@ -11,18 +11,18 @@ const { Option } = Select;
 interface AddTaskModalProps {
     visible: boolean;
     onClose: () => void;
-    onAdd: (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring: boolean, dueTime?: string) => void;
+    onAdd: (title: string, faction: Faction, difficulty: number, dueDate: Date, isRecurring: boolean, dueTime?: string, ascensionCategory?: AscensionCategory, subCategory?: string) => void;
     initialKeyword?: string;
     initialTask?: Task | null;
 }
 
 const FACTION_OPTIONS: { value: Faction; label: string; icon: React.ReactNode; color: string }[] = [
-    { value: 'nurgle', label: '納垢 (家務)', icon: <Activity />, color: '#10b981' },
-    { value: 'khorne', label: '恐虐 (健身)', icon: <Sword />, color: '#ef4444' },
-    { value: 'tzeentch', label: '奸奇 (學習)', icon: <Target />, color: '#3b82f6' },
-    { value: 'slaanesh', label: '色孽 (慾望)', icon: <Zap />, color: '#ec4899' },
-    { value: 'orks', label: '獸人 (雜務)', icon: <Skull />, color: '#f97316' },
-    { value: 'necrons', label: '死靈 (Debug)', icon: <Shield />, color: '#94a3b8' },
+    { value: 'nurgle', label: '納垢 (家務)', icon: <Home />, color: '#10b981' },
+    { value: 'khorne', label: '恐虐 (健身)', icon: <Activity />, color: '#ef4444' },
+    { value: 'tzeentch', label: '奸奇 (學習)', icon: <Book />, color: '#3b82f6' },
+    { value: 'slaanesh', label: '色孽 (慾望)', icon: <Heart />, color: '#ec4899' },
+    { value: 'orks', label: '獸人 (雜務)', icon: <Hammer />, color: '#f97316' },
+    { value: 'necrons', label: '死靈 (Debug)', icon: <Cpu />, color: '#94a3b8' },
 ];
 
 export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, onAdd, initialKeyword = '', initialTask }) => {
@@ -39,6 +39,8 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
     const [difficulty, setDifficulty] = useState(1);
     const [faction, setFaction] = useState<Faction>('orks');
     const [isRecurring, setIsRecurring] = useState(false);
+    const [ascensionCategory, setAscensionCategory] = useState<AscensionCategory | undefined>();
+    const [subCategory, setSubCategory] = useState<string>('');
     // @ts-ignore
     const [dueDate, setDueDate] = useState<dayjs.Dayjs>(dayjs().add(12, 'hour'));
 
@@ -51,6 +53,8 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
                 setDifficulty(initialTask.difficulty);
                 setFaction(initialTask.faction);
                 setIsRecurring(initialTask.isRecurring || false);
+                setAscensionCategory(initialTask.ascensionCategory);
+                setSubCategory(initialTask.subCategory || '');
                 // @ts-ignore
                 setDueDate(dayjs(initialTask.dueDate));
                 setInputMode('manual'); // Force manual on edit
@@ -60,6 +64,8 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
                 setDifficulty(1);
                 setFaction('orks');
                 setIsRecurring(false);
+                setAscensionCategory(undefined);
+                setSubCategory('');
                 // @ts-ignore
                 setDueDate(dayjs().add(12, 'hour'));
                 setInputMode('manual');
@@ -81,8 +87,10 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
     const handleSubmit = () => {
         if (!title.trim()) return;
         const dueTime = isRecurring ? dueDate.format('HH:mm') : undefined;
-        onAdd(title, faction, difficulty, dueDate.toDate(), isRecurring, dueTime);
+        onAdd(title, faction, difficulty, dueDate.toDate(), isRecurring, dueTime, ascensionCategory, subCategory);
         setTitle('');
+        setAscensionCategory(undefined);
+        setSubCategory('');
         setIsRecurring(false);
         onClose();
     };
@@ -193,6 +201,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
                 </div>
             </div>
 
+            {/* Daily/Recurring Settings */}
             <div className="bg-zinc-900/50 p-4 border border-imperial-gold/20 rounded space-y-4">
                 <div className="flex items-center gap-2">
                     <Checkbox
@@ -204,11 +213,13 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
                     </Checkbox>
                 </div>
 
-                {isRecurring && (
-                    <div className="text-[10px] text-cyan-400 font-mono animate-pulse">
-                        任務將在每天 00:00 自動重置並重新開放。
-                    </div>
-                )}
+                {
+                    isRecurring && (
+                        <div className="text-[10px] text-cyan-400 font-mono animate-pulse">
+                            任務將在每天 00:00 自動重置並重新開放。
+                        </div>
+                    )
+                }
 
                 <div>
                     <label className="text-imperial-gold/70 font-mono block mb-2 text-xs">
@@ -245,7 +256,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
                         handleStyle={{ borderColor: '#ef4444', backgroundColor: '#ef4444' }}
                     />
                 </div>
-            </div>
+            </div >
 
             <Button
                 type="primary"
@@ -254,7 +265,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
             >
                 DEPLOY TASK
             </Button>
-        </div>
+        </div >
     );
 
     const titleNode = <span className="text-imperial-gold font-bold tracking-widest text-lg">/// TACTICAL DEPLOYMENT ///</span>;
