@@ -41,7 +41,8 @@ router.get('/', async (req, res) => {
             sectorHistory: row.sector_history,
             ownedUnits: row.owned_units,
             notificationEmail: row.notification_email,
-            emailEnabled: row.email_enabled
+            emailEnabled: row.email_enabled,
+            astartes: row.astartes
         };
         res.json(gameState);
     } catch (err) {
@@ -71,6 +72,7 @@ router.post('/', async (req, res) => {
         if (state.ownedUnits) { fields.push(`owned_units = $${idx++}`); values.push(state.ownedUnits); }
         if (state.notificationEmail !== undefined) { fields.push(`notification_email = $${idx++}`); values.push(state.notificationEmail); }
         if (state.emailEnabled !== undefined) { fields.push(`email_enabled = $${idx++}`); values.push(state.emailEnabled); }
+        if (state.astartes) { fields.push(`astartes = $${idx++}`); values.push(state.astartes); }
 
         if (fields.length === 0) return res.status(400).json({ message: 'No data to sync' });
 
@@ -91,8 +93,8 @@ router.post('/', async (req, res) => {
             // Strategy: If not exists, INSERT. If exists, UPDATE.
             // Since the dynamic update logic is complex, let's handle the INSERT case simply:
             await query(
-                'INSERT INTO game_state (id, user_id, resources, corruption, current_month, is_penitent_mode, army_strength, sector_history, owned_units) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-                [userId, userId, state.resources || {}, state.corruption || 0, state.currentMonth || 0, state.isPenitentMode || false, state.armyStrength || {}, state.sectorHistory || {}, state.ownedUnits || []]
+                'INSERT INTO game_state (id, user_id, resources, corruption, current_month, is_penitent_mode, army_strength, sector_history, owned_units, astartes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+                [userId, userId, state.resources || {}, state.corruption || 0, state.currentMonth || 0, state.isPenitentMode || false, state.armyStrength || {}, state.sectorHistory || {}, state.ownedUnits || [], state.astartes || {}]
             );
             return res.json({ message: 'Game state created' });
         }

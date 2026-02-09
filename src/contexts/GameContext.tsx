@@ -577,13 +577,17 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const task = tasks.find(t => t.id === id);
         if (task && task.ascensionCategory) {
             const difficulty = task.difficulty || 1;
-            const amount = difficulty * 10;
+            const amount = difficulty; // Fix: 1x multiplier (1-5 points based on difficulty)
             switch (task.ascensionCategory) {
                 case 'exercise': modifyAstartesResources({ adamantium: amount }, "Task: Exercise"); break;
                 case 'learning': modifyAstartesResources({ neuroData: amount }, "Task: Learning"); break;
                 case 'cleaning': modifyAstartesResources({ puritySeals: amount }, "Task: Cleaning"); break;
                 case 'parenting': modifyAstartesResources({ geneLegacy: amount }, "Task: Parenting"); break;
             }
+
+            // Glory Reward based on difficulty (5 per level)
+            const gloryReward = difficulty * 5;
+            modifyResources(0, gloryReward, `Ascension Task Completed: ${task.title}`);
         }
 
         modifyResources(rpReward, 5, `Task Completed: ${tasks.find(t => t.id === id)?.title || 'Unknown'}`);

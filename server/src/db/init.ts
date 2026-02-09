@@ -46,7 +46,8 @@ const schemaSql = `
         is_penitent_mode BOOLEAN DEFAULT FALSE,
         army_strength JSONB DEFAULT '{"reserves": {"guardsmen": 0, "spaceMarines": 0, "custodes": 0, "dreadnought": 0, "baneblade": 0}, "garrisons": {}, "totalActivePower": 0}'::jsonb,
         sector_history JSONB DEFAULT '{}'::jsonb,
-        owned_units JSONB DEFAULT '[]'::jsonb
+        owned_units JSONB DEFAULT '[]'::jsonb,
+        astartes JSONB DEFAULT '{"resources": {"adamantium": 0, "neuroData": 0, "puritySeals": 0, "geneLegacy": 0}, "unlockedImplants": [], "completedStages": [], "ritualActivities": {}}'::jsonb
     );
     -- Resource Logs Table
     CREATE TABLE IF NOT EXISTS resource_logs (
@@ -106,6 +107,7 @@ const initDb = async () => {
         // Email Notification Migrations
         await pool.query('ALTER TABLE game_state ADD COLUMN IF NOT EXISTS notification_email TEXT');
         await pool.query('ALTER TABLE game_state ADD COLUMN IF NOT EXISTS email_enabled BOOLEAN DEFAULT FALSE');
+        await pool.query('ALTER TABLE game_state ADD COLUMN IF NOT EXISTS astartes JSONB DEFAULT \'{"resources": {"adamantium": 0, "neuroData": 0, "puritySeals": 0, "geneLegacy": 0}, "unlockedImplants": [], "completedStages": [], "ritualActivities": {}}\'::jsonb');
 
         // Create index for performance
         await pool.query('CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)');
