@@ -266,7 +266,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     if (gameState.sectorHistory) setSectorHistory(gameState.sectorHistory);
                     if (gameState.notificationEmail) setNotificationEmail(gameState.notificationEmail);
                     if (gameState.emailEnabled !== undefined) setEmailEnabled(gameState.emailEnabled);
-                    if (gameState.astartes) setAstartes(gameState.astartes);
+                    if (gameState.astartes) {
+                        const loadedAstartes = gameState.astartes;
+                        // Fix: If ritualActivities is empty (default from DB), load defaults from code
+                        if (!loadedAstartes.ritualActivities || Object.keys(loadedAstartes.ritualActivities).length === 0) {
+                            loadedAstartes.ritualActivities = RITUAL_ACTIVITIES;
+                        }
+                        setAstartes(loadedAstartes);
+                    }
                 }
                 setInitialized(true);
             } catch (err) {
