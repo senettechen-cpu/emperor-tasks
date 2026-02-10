@@ -571,16 +571,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
         });
 
-        // Reward Logic (Standard Per Task Reward)
-        let rpReward = 10;
-        if (activeTacticalScan) {
-            const task = tasks.find(t => t.id === id);
-            if (task && task.difficulty >= 4) {
-                rpReward *= 2;
-                setActiveTacticalScan(false); // Consume charge
-            }
-        }
-
         const task = tasks.find(t => t.id === id);
         if (task && task.ascensionCategory) {
             const difficulty = task.difficulty || 1;
@@ -596,10 +586,19 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const gloryReward = difficulty * 5;
             console.log(`[Ascension] Task Completed: ${task.title} | Difficulty: ${difficulty} | Resource Amount: ${amount} | Glory Reward: ${gloryReward}`);
             modifyResources(0, gloryReward, `Ascension Task Completed: ${task.title}`);
+        } else {
+            // Standard Task Reward
+            let rpReward = 10;
+            if (activeTacticalScan) {
+                const task = tasks.find(t => t.id === id);
+                if (task && task.difficulty >= 4) {
+                    rpReward *= 2;
+                    setActiveTacticalScan(false); // Consume charge
+                }
+            }
+            modifyResources(rpReward, 5, `Task Completed: ${tasks.find(t => t.id === id)?.title || 'Unknown'}`);
+            modifyCorruption(-2, "Task Completed: Purification");
         }
-
-        modifyResources(rpReward, 5, `Task Completed: ${tasks.find(t => t.id === id)?.title || 'Unknown'}`);
-        modifyCorruption(-2, "Task Completed: Purification");
     };
 
     const deleteTask = async (id: string) => {
