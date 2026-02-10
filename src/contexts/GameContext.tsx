@@ -312,7 +312,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }, 1000); // Debounce 1s
 
         return () => clearTimeout(timer);
-    }, [resources, corruption, ownedUnits, armyStrength, currentMonth, sectorHistory, isPenitentMode, notificationEmail, emailEnabled, initialized, user, getToken]);
+    }, [resources, corruption, ownedUnits, armyStrength, currentMonth, sectorHistory, isPenitentMode, notificationEmail, emailEnabled, astartes, initialized, user, getToken]);
 
     // Sector Traits Initialization
     const getTraitForMonth = (monthId: string): PlanetaryTraitType => {
@@ -594,6 +594,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Glory Reward based on difficulty (5 per level)
             const gloryReward = difficulty * 5;
+            console.log(`[Ascension] Task Completed: ${task.title} | Difficulty: ${difficulty} | Resource Amount: ${amount} | Glory Reward: ${gloryReward}`);
             modifyResources(0, gloryReward, `Ascension Task Completed: ${task.title}`);
         }
 
