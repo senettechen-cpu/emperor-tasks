@@ -61,6 +61,7 @@ export const api = {
     },
 
     syncGameState: async (state: any, token?: string): Promise<void> => {
+        console.log("[API] Syncing Game State:", JSON.stringify(state).substring(0, 200) + "...");
         const response = await fetch(`${API_URL}/game-state`, {
             method: 'POST',
             headers: getHeaders(token),

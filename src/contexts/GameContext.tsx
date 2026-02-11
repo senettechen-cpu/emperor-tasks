@@ -602,7 +602,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const task = tasks.find(t => t.id === id);
         if (task && task.ascensionCategory) {
             const difficulty = task.difficulty || 1;
-            const amount = difficulty; // Fix: 1x multiplier (1-5 points based on difficulty)
+            const amount = difficulty;
+
+            // Fix: Add Glory Reward for Rituals
+            modifyResources(0, amount, "Ritual Completed");
+
             switch (task.ascensionCategory) {
                 case 'exercise': modifyAstartesResources({ adamantium: amount }, "Task: Exercise"); break;
                 case 'learning': modifyAstartesResources({ neuroData: amount }, "Task: Learning"); break;

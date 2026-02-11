@@ -57,6 +57,8 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const state = req.body;
+        console.log(`[Sync] Received state update for user ${req.user?.uid}`);
+        if (state.astartes) console.log(`[Sync] Astartes data present:`, JSON.stringify(state.astartes).substring(0, 100) + '...');
 
         // We update all tracked fields if they are present in the payload
         const fields = [];
