@@ -86,6 +86,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Auth
     const { getToken, user } = useAuth();
 
+    // Sync Locking
+    const isDirty = React.useRef(false);
+
     // State Initialization
     const [tasks, setTasks] = useState<Task[]>([]);
     const [resources, setResources] = useState<Resources>({ rp: 0, glory: 0 });
@@ -121,6 +124,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 
     const updateSettings = async (email: string, enabled: boolean) => {
+        isDirty.current = true;
         setNotificationEmail(email);
         setEmailEnabled(enabled);
         // Sync is handled by the effect, but for immediate UI changes we set state.
@@ -156,17 +160,20 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Helper for Resources & Logging
     const modifyResources = (rpChange: number, gloryChange: number, reason: string) => {
+        isDirty.current = true;
         setResources(prev => ({ rp: Math.max(0, prev.rp + rpChange), glory: Math.max(0, prev.glory + gloryChange) }));
         if (rpChange !== 0) api.logResourceChange({ category: 'rp', amount: rpChange, reason });
         if (gloryChange !== 0) api.logResourceChange({ category: 'glory', amount: gloryChange, reason });
     };
 
     const modifyCorruption = (change: number, reason: string) => {
+        isDirty.current = true;
         setCorruption(prev => Math.max(0, Math.min(100, prev + change)));
         if (change !== 0) api.logResourceChange({ category: 'corruption', amount: change, reason });
     };
 
     const modifyAstartesResources = (changes: Partial<AstartesResources>, reason: string) => {
+        isDirty.current = true;
         setAstartes(prev => {
             const newRes = { ...prev.resources };
             let logMsg = reason + ': ';
@@ -181,10 +188,12 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const updateAstartes = (newState: Partial<AstartesState>) => {
+        isDirty.current = true;
         setAstartes(prev => ({ ...prev, ...newState }));
     };
 
     const addRitualActivity = (category: AscensionCategory, name: string, baseDifficulty: number) => {
+        isDirty.current = true;
         setAstartes(prev => {
             const currentActivities = prev.ritualActivities || RITUAL_ACTIVITIES;
             const newActivity: RitualActivity = {
@@ -202,6 +211,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const updateRitualActivity = (category: AscensionCategory, activityId: string, updates: Partial<RitualActivity>) => {
+        isDirty.current = true;
         setAstartes(prev => {
             const currentActivities = prev.ritualActivities || RITUAL_ACTIVITIES;
             const updated = {
@@ -216,6 +226,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const deleteRitualActivity = (category: AscensionCategory, activityId: string) => {
+        isDirty.current = true;
         setAstartes(prev => {
             const currentActivities = prev.ritualActivities || RITUAL_ACTIVITIES;
             const updated = {
@@ -235,6 +246,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Initial Data Fetch & Polling
     useEffect(() => {
         const loadData = async () => {
+            if (isDirty.current) {
+                console.log("Skipping loadData (local state dirty)");
+                return;
+            }
             try {
                 const token = await getToken();
                 if (!token) return; // Should not happen given App structure, but safe guard
@@ -296,7 +311,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const timer = setTimeout(async () => {
             const token = await getToken();
             if (!token) return;
-            api.syncGameState({
+            await api.syncGameState({
                 resources,
                 corruption,
                 ownedUnits,
@@ -309,6 +324,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 emailEnabled,
                 astartes
             }, token).catch(err => console.error("Sync Failed", err));
+            isDirty.current = false;
         }, 1000); // Debounce 1s
 
         return () => clearTimeout(timer);
@@ -614,6 +630,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const buyUnit = (unitId: string, cost: number) => {
         if (resources.glory >= cost && !ownedUnits.includes(unitId)) {
             modifyResources(0, -cost, `Unit Purchased: ${unitId}`);
+            isDirty.current = true;
             setOwnedUnits(prev => [...prev, unitId]);
         }
     };
@@ -626,6 +643,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const resetGame = () => {
+        isDirty.current = true;
         setCorruption(50);
         setIsPenitentMode(false);
         // Maybe trigger a backend reset?
@@ -787,6 +805,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (resources.glory >= cost) {
             modifyResources(0, -cost, `Recruited: ${type}`);
+            isDirty.current = true;
             setArmyStrength(prev => {
                 return {
                     ...prev,
@@ -802,6 +821,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const deployUnit = (monthId: string, type: UnitType, count: number) => {
+        isDirty.current = true;
         setArmyStrength(prev => {
             if ((prev.reserves[type] || 0) < count) return prev;
 
@@ -837,6 +857,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const recallUnit = (monthId: string, type: UnitType, count: number) => {
+        isDirty.current = true;
         setArmyStrength(prev => {
             const currentGarrison = prev.garrisons[monthId] || { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
             if ((currentGarrison[type] || 0) < count) return prev;
@@ -873,6 +894,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const grantAscensionReward = (units: UnitType[], glory: number = 0) => {
         // 1. Add to Reserves
+        isDirty.current = true;
         setArmyStrength(prev => {
             const newReserves = { ...prev.reserves };
             units.forEach(u => {
@@ -1039,11 +1061,13 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             modifyCorruption(20, "Battle Defeat");
         }
 
+        isDirty.current = true;
         setSectorHistory(prev => ({ ...prev, [monthId]: result }));
         setCurrentMonth(prev => (prev + 1) % 12);
     };
 
     const advanceMonth = () => {
+        isDirty.current = true;
         setCurrentMonth(prev => (prev + 1) % 12);
     };
 
@@ -1052,16 +1076,21 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Calculate deltas for logging
         const rpDelta = res.rp - resources.rp;
         const gloryDelta = res.glory - resources.glory;
+        isDirty.current = true;
         setResources(res);
         if (rpDelta !== 0) api.logResourceChange({ category: 'rp', amount: rpDelta, reason: "GM Override" });
         if (gloryDelta !== 0) api.logResourceChange({ category: 'glory', amount: gloryDelta, reason: "GM Override" });
     };
     const debugSetCorruption = (val: number) => {
         const delta = val - corruption;
+        isDirty.current = true;
         setCorruption(val);
         api.logResourceChange({ category: 'corruption', amount: delta, reason: "GM Override" });
     };
-    const debugSetArmyStrength = (army: ArmyStrength) => setArmyStrength(army);
+    const debugSetArmyStrength = (army: ArmyStrength) => {
+        isDirty.current = true;
+        setArmyStrength(army);
+    };
 
     return (
         <GameContext.Provider value={{
