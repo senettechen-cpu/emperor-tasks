@@ -160,10 +160,22 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Helper for Resources & Logging
     const modifyResources = (rpChange: number, gloryChange: number, reason: string) => {
+        console.log(`[modifyResources] Called. RP: ${rpChange}, Glory: ${gloryChange}, Reason: ${reason}`);
         isDirty.current = true;
-        setResources(prev => ({ rp: Math.max(0, prev.rp + rpChange), glory: Math.max(0, prev.glory + gloryChange) }));
-        if (rpChange !== 0) api.logResourceChange({ category: 'rp', amount: rpChange, reason });
-        if (gloryChange !== 0) api.logResourceChange({ category: 'glory', amount: gloryChange, reason });
+        setResources(prev => {
+            const next = { rp: Math.max(0, prev.rp + rpChange), glory: Math.max(0, prev.glory + gloryChange) };
+            console.log(`[modifyResources] State Update: ${JSON.stringify(prev)} -> ${JSON.stringify(next)}`);
+            return next;
+        });
+
+        // Fix: Get token for logging (Async issue? We can't await here easily without making function async)
+        // Ideally we fire and forget, but we need the token.
+        getToken().then(token => {
+            if (token) {
+                if (rpChange !== 0) api.logResourceChange({ category: 'rp', amount: rpChange, reason }, token);
+                if (gloryChange !== 0) api.logResourceChange({ category: 'glory', amount: gloryChange, reason }, token);
+            }
+        });
     };
 
     const modifyCorruption = (change: number, reason: string) => {

@@ -115,6 +115,7 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
     // Handlers
     const handleSubmit = async () => {
         if (!itemName || amount <= 0) return;
+        console.log("Submitting Requisition...");
 
         const newExpense: Expense = {
             id: Date.now().toString(),
@@ -130,7 +131,9 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
             if (!token) throw new Error("Offline");
 
             await import('../services/api').then(m => m.api.addExpense(newExpense, token));
+            console.log("Expense API success. Updating resources...");
             modifyResources(0, 50, "Requisition Filed");
+            console.log("Resources updated locally.");
 
             // Play Sound
             const audio = new Audio('/sounds/deploy.mp3');
@@ -143,7 +146,8 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
             // Simple Feedback
             console.log("Expense Added");
         } catch (e) {
-            console.error(e);
+            console.error("Requisition Failed:", e);
+            alert("Requisition Failed: " + e); // Explicit feedback
         }
     };
 
