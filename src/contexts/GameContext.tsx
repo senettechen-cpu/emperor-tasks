@@ -536,114 +536,126 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
         }
 
-        setTasks(prev => {
-            return prev.map(t => {
-                if (t.id === id) {
-                    if (t.isRecurring) {
-                        const now = new Date();
-                        const todayStr = now.toDateString(); // "Mon Jan 27 2026"
-                        const lastCompStr = t.lastCompletedAt ? new Date(t.lastCompletedAt).toDateString() : '';
+        // 1. Find the task in current state (Using closure value, which is safe for this event handler)
+        const taskIndex = tasks.findIndex(t => t.id === id);
+        if (taskIndex === -1) return;
+        const task = tasks[taskIndex];
 
-                        // Streak Logic
-                        let newStreak = t.streak || 0;
-                        let shouldReward = false;
+        // 2. Determine updates based on task type
+        let updatedTask = { ...task };
+        let shouldReward = true;
+        let logMsg = `Task Completed: ${task.title}`;
+        let rpChange = 0;
+        let gloryChange = 0;
+        let corruptionChange = -2; // Default purification
+        let ascensionRewards: Partial<AstartesResources> = {};
 
-                        if (lastCompStr === todayStr) {
-                            // Already done today, don't increase streak.
-                            // However, if streak is 0 for some reason, fix it to 1 if it's "Completed" today.
-                            if (newStreak === 0) newStreak = 1;
-                            const updatedFix = { ...t, streak: newStreak };
-                            if (t.streak !== newStreak) {
-                                getToken().then(token => {
-                                    if (token) api.updateTask(id, { streak: newStreak }, token).catch(console.error);
-                                });
-                                return updatedFix;
-                            }
-                            return t;
-                        }
+        const now = new Date();
+        const todayStr = now.toDateString();
 
-                        const yesterday = new Date();
-                        yesterday.setDate(yesterday.getDate() - 1);
-                        const yesterdayStr = yesterday.toDateString();
+        if (task.isRecurring) {
+            const lastCompStr = task.lastCompletedAt ? new Date(task.lastCompletedAt).toDateString() : '';
 
-                        if (lastCompStr === yesterdayStr) {
-                            // Consecutive day
-                            newStreak += 1;
-                            shouldReward = true;
-                        } else {
-                            // First time OR Broken streak
-                            // If never completed, or missed a day -> Reset to 1 (Today counts as 1)
-                            newStreak = 1;
-                        }
+            // Prevent multi-click spam on same day
+            if (lastCompStr === todayStr) {
+                shouldReward = false; // Already done today
+            } else {
+                // Check streak logic
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toDateString();
 
-                        // Milestone Rewards (Check ONLY if we just incremented)
-                        // Note: Logic allows only 1 reward per day per task
-                        if (shouldReward || newStreak === 1) { // Check rewards on increment or fresh start? Usually streaks reward on increment.
-                            const streakRewards = {
-                                7: { glory: 50, rp: 20, msg: "Weekly Discipline Bonus!" },
-                                14: { glory: 150, rp: 50, msg: "Fortnight of Iron Will!" },
-                                21: { glory: 300, rp: 75, msg: "Tricenary of Faith!" }, // 21 days
-                                30: { glory: 500, rp: 100, msg: "Month of The Emperor's Grace!" }
-                            };
-                            // @ts-ignore
-                            const reward = streakRewards[newStreak];
-                            if (reward) {
-                                setResources(res => ({ ...res, glory: res.glory + reward.glory, rp: res.rp + reward.rp }));
-                                console.log(reward.msg); // Could trigger a toast notification here if we had one
-                                // Ideally we pass this msg to UI. For now, resources update is enough.
-                            }
-                        }
-
-                        const updated = { ...t, lastCompletedAt: new Date(), status: 'active' as const, streak: newStreak };
-                        getToken().then(token => {
-                            if (token) api.updateTask(id, { lastCompletedAt: updated.lastCompletedAt, status: 'active', streak: newStreak }, token).catch(e => console.error(e));
-                        });
-                        return updated;
-                    }
-                    getToken().then(token => {
-                        if (token) api.updateTask(id, { status: 'completed' }, token).catch(e => console.error(e));
-                    });
-                    return { ...t, status: 'completed' as const };
+                let newStreak = (task.streak || 0);
+                if (lastCompStr === yesterdayStr) {
+                    newStreak += 1;
+                } else {
+                    newStreak = 1;
                 }
-                return t;
-            }).filter(t => {
-                if (t.isRecurring) return true; // Keep recurring tasks in the state, filter in UI or logic
-                return t.status !== 'completed';
-            });
-        });
 
-        const task = tasks.find(t => t.id === id);
-        if (task && task.ascensionCategory) {
-            const difficulty = task.difficulty || 1;
-            const amount = difficulty;
+                updatedTask.streak = newStreak;
+                updatedTask.lastCompletedAt = now;
+                updatedTask.status = 'active'; // Recurring stays active
 
-            // Fix: Add Glory Reward for Rituals
-            modifyResources(0, amount, "Ritual Completed");
-
-            switch (task.ascensionCategory) {
-                case 'exercise': modifyAstartesResources({ adamantium: amount }, "Task: Exercise"); break;
-                case 'learning': modifyAstartesResources({ neuroData: amount }, "Task: Learning"); break;
-                case 'cleaning': modifyAstartesResources({ puritySeals: amount }, "Task: Cleaning"); break;
-                case 'parenting': modifyAstartesResources({ geneLegacy: amount }, "Task: Parenting"); break;
+                // Milestone Rewards detection
+                const streakRewards = {
+                    7: { glory: 50, rp: 20, msg: "Weekly Discipline Bonus!" },
+                    14: { glory: 150, rp: 50, msg: "Fortnight of Iron Will!" },
+                    21: { glory: 300, rp: 75, msg: "Tricenary of Faith!" },
+                    30: { glory: 500, rp: 100, msg: "Month of The Emperor's Grace!" }
+                };
+                // @ts-ignore
+                const bonus = streakRewards[newStreak];
+                if (bonus) {
+                    gloryChange += bonus.glory;
+                    rpChange += bonus.rp;
+                    logMsg += ` (Streak ${newStreak} Bonus)`;
+                }
             }
-
-            // Glory Reward based on difficulty (5 per level)
-            const gloryReward = difficulty * 5;
-            console.log(`[Ascension] Task Completed: ${task.title} | Difficulty: ${difficulty} | Resource Amount: ${amount} | Glory Reward: ${gloryReward}`);
-            modifyResources(0, gloryReward, `Ascension Task Completed: ${task.title}`);
         } else {
-            // Standard Task Reward
-            let rpReward = 10;
-            if (activeTacticalScan) {
-                const task = tasks.find(t => t.id === id);
-                if (task && task.difficulty >= 4) {
-                    rpReward *= 2;
+            // Standard / Ascension Task
+            updatedTask.status = 'completed';
+        }
+
+        // 3. Process Rewards (if eligible)
+        if (shouldReward) {
+            const difficulty = task.difficulty || 1;
+
+            if (task.ascensionCategory) {
+                // Ritual / Ascension Logic
+                const amount = difficulty;
+                gloryChange += difficulty * 5;
+                logMsg = `Ritual Completed: ${task.title}`;
+
+                switch (task.ascensionCategory) {
+                    case 'exercise': ascensionRewards.adamantium = amount; break;
+                    case 'learning': ascensionRewards.neuroData = amount; break;
+                    case 'cleaning': ascensionRewards.puritySeals = amount; break;
+                    case 'parenting': ascensionRewards.geneLegacy = amount; break;
+                }
+            } else {
+                // Standard Task
+                rpChange += 10; // Base RP
+                gloryChange += 5; // Base Glory
+
+                if (activeTacticalScan && difficulty >= 4) {
+                    rpChange *= 2;
                     setActiveTacticalScan(false); // Consume charge
                 }
             }
-            modifyResources(rpReward, 5, `Task Completed: ${tasks.find(t => t.id === id)?.title || 'Unknown'}`);
-            modifyCorruption(-2, "Task Completed: Purification");
+
+            // Apply Resource Changes
+            // Ensure we use the centralized modify functions which handle Logging and isDirty
+            if (rpChange !== 0 || gloryChange !== 0) {
+                modifyResources(rpChange, gloryChange, logMsg);
+            }
+            if (corruptionChange !== 0) {
+                modifyCorruption(corruptionChange, "Task Purification");
+            }
+            if (Object.keys(ascensionRewards).length > 0) {
+                modifyAstartesResources(ascensionRewards, logMsg);
+            }
         }
+
+        // 4. Update Task State (UI)
+        setTasks(prev => {
+            return prev.map(t => t.id === id ? updatedTask : t)
+                .filter(t => t.isRecurring || t.status !== 'completed'); // Remove non-recurring completed
+        });
+
+        // 5. Persist Task Update (Backend)
+        getToken().then(token => {
+            if (token) {
+                const payload: any = { status: updatedTask.status };
+                if (task.isRecurring) {
+                    payload.lastCompletedAt = updatedTask.lastCompletedAt;
+                    payload.streak = updatedTask.streak;
+                }
+                api.updateTask(id, payload, token).catch(err => {
+                    console.error("Failed to sync task update:", err);
+                    // Optional: Revert state or alert user
+                });
+            }
+        });
     };
 
     const deleteTask = async (id: string) => {
