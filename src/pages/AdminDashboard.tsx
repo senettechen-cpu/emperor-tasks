@@ -23,13 +23,14 @@ export const AdminDashboard: React.FC = () => {
     // Logs State
     const [logs, setLogs] = useState<any[]>([]);
     const [loadingLogs, setLoadingLogs] = useState(false);
+    const [logFilter, setLogFilter] = useState<string>('all'); // all, glory, materials, rp, corruption
 
     const fetchLogs = async () => {
         setLoadingLogs(true);
         try {
             const token = await getToken();
             if (token) {
-                const data = await api.getLogs(100, 0, token); // Limit 100
+                const data = await api.getLogs(200, 0, token); // Increased limit to 200
                 setLogs(data);
             }
         } catch (e) {
@@ -42,6 +43,15 @@ export const AdminDashboard: React.FC = () => {
     useEffect(() => {
         fetchLogs();
     }, []);
+
+    const filteredLogs = logs.filter(log => {
+        if (logFilter === 'all') return true;
+        if (logFilter === 'glory') return log.category === 'glory';
+        if (logFilter === 'rp') return log.category === 'rp';
+        if (logFilter === 'corruption') return log.category === 'corruption';
+        if (logFilter === 'materials') return ['adamantium', 'neuroData', 'puritySeals', 'geneLegacy'].includes(log.category);
+        return true;
+    });
 
     const [localRp, setLocalRp] = useState(resources.rp);
     const [localGlory, setLocalGlory] = useState(resources.glory);
@@ -116,13 +126,19 @@ export const AdminDashboard: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Audit Logs (Moved to Top for Visibility) */}
                 <Card title={<span className="text-zinc-400">Log Cogitator (Audit Records)</span>} className="!bg-black/50 !border-zinc-700/30 md:col-span-2">
-                    <div className="mb-4 flex justify-end">
+                    <div className="mb-4 flex justify-between items-center">
+                        <div className="flex gap-2">
+                            <Button size="small" type={logFilter === 'all' ? 'primary' : 'default'} onClick={() => setLogFilter('all')}>All</Button>
+                            <Button size="small" className={logFilter === 'glory' ? '!bg-blue-600 !text-white' : ''} onClick={() => setLogFilter('glory')}>Glory</Button>
+                            <Button size="small" className={logFilter === 'materials' ? '!bg-purple-600 !text-white' : ''} onClick={() => setLogFilter('materials')}>Materials (Ritual)</Button>
+                            <Button size="small" className={logFilter === 'rp' ? '!bg-yellow-600 !text-white' : ''} onClick={() => setLogFilter('rp')}>RP</Button>
+                        </div>
                         <Button icon={<RefreshCw size={14} />} onClick={fetchLogs} loading={loadingLogs}>Refresh Logs</Button>
                     </div>
                     <Table
-                        dataSource={logs}
+                        dataSource={filteredLogs}
                         rowKey="id"
-                        pagination={{ pageSize: 5 }}
+                        pagination={{ pageSize: 10 }}
                         size="small"
                         className="dark-table"
                         scroll={{ x: true }}
@@ -150,6 +166,7 @@ export const AdminDashboard: React.FC = () => {
                                     if (c === 'rp') color = 'gold';
                                     if (c === 'glory') color = 'blue';
                                     if (c === 'corruption') color = 'red';
+                                    if (['adamantium', 'neuroData', 'puritySeals', 'geneLegacy'].includes(c)) color = 'purple';
                                     return <Tag color={color}>{c.toUpperCase()}</Tag>;
                                 }
                             },

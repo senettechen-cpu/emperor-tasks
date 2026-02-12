@@ -186,6 +186,19 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const modifyAstartesResources = (changes: Partial<AstartesResources>, reason: string) => {
         isDirty.current = true;
+
+        // Log to Backend
+        getToken().then(token => {
+            if (token) {
+                (Object.keys(changes) as (keyof AstartesResources)[]).forEach(k => {
+                    const delta = changes[k] || 0;
+                    if (delta !== 0) {
+                        api.logResourceChange({ category: k, amount: delta, reason }, token);
+                    }
+                });
+            }
+        });
+
         setAstartes(prev => {
             const newRes = { ...prev.resources };
             let logMsg = reason + ': ';
@@ -194,7 +207,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 newRes[k] = Math.max(0, newRes[k] + delta);
                 logMsg += `${k} ${delta > 0 ? '+' : ''}${delta} `;
             });
-            console.log(logMsg); // Ideally log to backend too
+            console.log(logMsg);
             return { ...prev, resources: newRes };
         });
     };
