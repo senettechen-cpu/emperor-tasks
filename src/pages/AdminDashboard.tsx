@@ -133,7 +133,27 @@ export const AdminDashboard: React.FC = () => {
                             <Button size="small" className={logFilter === 'materials' ? '!bg-purple-600 !text-white' : ''} onClick={() => setLogFilter('materials')}>Materials (Ritual)</Button>
                             <Button size="small" className={logFilter === 'rp' ? '!bg-yellow-600 !text-white' : ''} onClick={() => setLogFilter('rp')}>RP</Button>
                         </div>
-                        <Button icon={<RefreshCw size={14} />} onClick={fetchLogs} loading={loadingLogs}>Refresh Logs</Button>
+                        <div className="flex gap-2 items-center">
+                            <Button
+                                size="small"
+                                danger
+                                ghost
+                                onClick={async () => {
+                                    try {
+                                        const token = await getToken();
+                                        if (!token) return message.error("No Token");
+                                        await api.logResourceChange({ category: 'rp', amount: 0, reason: "ADMIN_CONNECTION_TEST" }, token);
+                                        message.success("Test Log Sent! DB Connection OK.");
+                                        fetchLogs();
+                                    } catch (e) {
+                                        message.error("Test Failed: " + String(e));
+                                    }
+                                }}
+                            >
+                                Test Conn
+                            </Button>
+                            <Button icon={<RefreshCw size={14} />} onClick={fetchLogs} loading={loadingLogs}>Refresh Logs</Button>
+                        </div>
                     </div>
                     <Table
                         dataSource={filteredLogs}
