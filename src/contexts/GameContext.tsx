@@ -416,20 +416,41 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         let damage = overdueTasks;
 
                         // Guardsmen take damage first
+                        let guardsmenLost = 0;
                         if (garrison.guardsmen >= damage) {
+                            guardsmenLost = damage;
                             garrison.guardsmen -= damage;
                             damage = 0;
                         } else {
+                            guardsmenLost = garrison.guardsmen;
                             damage -= garrison.guardsmen;
                             garrison.guardsmen = 0;
+
                             // Then Marines
+                            let marinesLost = 0;
                             if (garrison.space_marine >= damage) {
+                                marinesLost = damage;
                                 garrison.space_marine -= damage;
                                 damage = 0;
                             } else {
+                                marinesLost = garrison.space_marine;
                                 garrison.space_marine = Math.max(0, garrison.space_marine - damage);
                                 // Damage propagates... realistically just reduce somewhat
                             }
+
+                            if (marinesLost > 0) {
+                                console.warn(`Attrition: Lost ${marinesLost} Space Marines due to overdue tasks.`);
+                                getToken().then(token => {
+                                    if (token) api.logResourceChange({ category: 'unit_loss', amount: -marinesLost, reason: `Attrition: Space Marines lost in ${currentMonthId}` }, token);
+                                });
+                            }
+                        }
+
+                        if (guardsmenLost > 0) {
+                            console.warn(`Attrition: Lost ${guardsmenLost} Guardsmen due to overdue tasks.`);
+                            getToken().then(token => {
+                                if (token) api.logResourceChange({ category: 'unit_loss', amount: -guardsmenLost, reason: `Attrition: Guardsmen lost in ${currentMonthId}` }, token);
+                            });
                         }
 
                         const newGarrisons = { ...prev.garrisons, [currentMonthId]: garrison };
