@@ -80,7 +80,8 @@ const AppContent = () => {
       setIsMigrating(true);
       getToken().then(token => {
         // Normalize URL: Remove trailing /api or / if present to default to base
-        const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const fallbackUrl = import.meta.env.PROD ? window.location.origin : 'http://localhost:3001';
+        const rawUrl = import.meta.env.VITE_API_URL || fallbackUrl;
         const baseUrl = rawUrl.replace(/\/api\/?$/, '').replace(/\/+$/, '');
 
         fetch(`${baseUrl}/api/migration/claim`, {
