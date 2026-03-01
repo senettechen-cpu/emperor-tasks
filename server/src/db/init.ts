@@ -82,6 +82,7 @@ const schemaSql = `
         item_name TEXT NOT NULL,
         amount INTEGER NOT NULL,
         payment_method TEXT NOT NULL,
+        is_archived BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON expenses(user_id);
@@ -113,6 +114,9 @@ const initDb = async () => {
         await pool.query('CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)');
         await pool.query('CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id)');
         await pool.query('CREATE INDEX IF NOT EXISTS idx_gamestate_user_id ON game_state(user_id)');
+
+        // Ledger Archive Migration
+        await pool.query('ALTER TABLE expenses ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT FALSE');
 
         console.log('Migrations applied.');
 

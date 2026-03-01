@@ -7,6 +7,7 @@ import { Expense, ExpenseCategory, PaymentMethod } from '../types/ledger';
 import { EXPENSE_CATEGORIES, PAYMENT_METHODS } from '../constants/ledger';
 import { useAuth } from '../contexts/AuthContext';
 import { useGame } from '../contexts/GameContext';
+import dayjs from 'dayjs';
 
 interface RequisitionFormProps {
     visible: boolean;
@@ -21,7 +22,7 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
     const { modifyResources } = useGame();
 
     // Form State
-    const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [date, setDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
     const [category, setCategory] = useState<ExpenseCategory>("飲食");
     const [itemName, setItemName] = useState<string>('');
     const [amount, setAmount] = useState<number>(0);
@@ -56,8 +57,7 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
 
     // Helpers
     const getImperialDate = (dateStr: string) => {
-        const d = new Date(dateStr);
-        return `0.${String(Math.floor(Math.random() * 999)).padStart(3, '0')}.${d.getFullYear()}.M3`;
+        return dayjs(dateStr).format('YYYY-MM-DD');
     };
 
     const getIcon = (iconName: string) => {
@@ -159,6 +159,45 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
             setExpenses(prev => prev.filter(e => e.id !== id));
         } catch (e) {
             console.error("Delete failed", e);
+        }
+    };
+
+    const handleExportCSV = () => {
+        if (expenses.length === 0) return;
+
+        // Add BOM for Excel UTF-8
+        const BOM = '\uFEFF';
+        const headers = '日期,類別,項目名稱,金額,付款方式\n';
+
+        const rows = expenses.map(e => {
+            const dateStr = dayjs(e.date).format('YYYY-MM-DD');
+            const category = EXPENSE_CATEGORIES[e.category as ExpenseCategory]?.label || e.category;
+            const itemName = `"${e.itemName.replace(/"/g, '""')}"`; // Escape quotes
+            const amount = e.amount;
+            const payment = PAYMENT_METHODS[e.paymentMethod] || e.paymentMethod;
+            return `${dateStr},${category},${itemName},${amount},${payment}`;
+        }).join('\n');
+
+        const blob = new Blob([BOM + headers + rows], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `imperial_ledger_${dayjs().format('YYYY-MM')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleArchive = async () => {
+        if (!window.confirm("確定要結算並封存目前的紀錄嗎？(資料將會從列表清除，但保留在後端資料庫中以供調閱)")) return;
+        try {
+            const token = await getToken();
+            if (!token) return;
+            await import('../services/api').then(m => m.api.archiveExpenses(token));
+            setExpenses([]);
+        } catch (e) {
+            console.error("Archive failed", e);
+            alert("封存失敗");
         }
     };
 
@@ -353,8 +392,27 @@ export const RequisitionForm: React.FC<RequisitionFormProps> = ({ visible, onClo
                                 日期
                             </Button>
                         </div>
-                        <div className="text-[#c5a059] text-xs font-mono tracking-widest hidden md:block">
-                            RECORDS: {expenses.length} // SYSTEM: ONLINE
+                        <div className="flex gap-2 items-center">
+                            <Button
+                                size="small"
+                                className="!bg-[#c5a059]/20 !text-[#c5a059] !border-[#c5a059] hover:!bg-[#c5a059]/40"
+                                icon={<FileText size={14} />}
+                                onClick={handleExportCSV}
+                            >
+                                匯出 (CSV)
+                            </Button>
+                            <Button
+                                size="small"
+                                danger
+                                ghost
+                                icon={<Trash2 size={14} />}
+                                onClick={handleArchive}
+                            >
+                                封存本月
+                            </Button>
+                            <div className="text-[#c5a059] text-xs font-mono tracking-widest hidden md:block ml-2">
+                                RECORDS: {expenses.length} // SYSTEM: ONLINE
+                            </div>
                         </div>
                     </div>
 

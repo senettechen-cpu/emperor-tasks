@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
         if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
         const result = await pool.query(
-            'SELECT * FROM expenses WHERE user_id = $1 ORDER BY date DESC, created_at DESC',
+            'SELECT * FROM expenses WHERE user_id = $1 AND is_archived = FALSE ORDER BY date DESC, created_at DESC',
             [userId]
         );
 
@@ -53,6 +53,24 @@ router.post('/', async (req, res) => {
         res.status(201).json({ success: true });
     } catch (error) {
         console.error('Error adding expense:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// POST /api/ledger/archive - Archive all unarchived expenses for user
+router.post('/archive', async (req, res) => {
+    try {
+        const userId = req.user?.uid;
+        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+        await pool.query(
+            'UPDATE expenses SET is_archived = TRUE WHERE user_id = $1 AND is_archived = FALSE',
+            [userId]
+        );
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error archiving expenses:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

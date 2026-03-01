@@ -163,5 +163,13 @@ export const api = {
             headers: getHeaders(token)
         });
         if (!response.ok) throw new Error('Failed to delete expense');
+    },
+
+    archiveExpenses: async (token?: string): Promise<void> => {
+        const response = await fetch(`${API_URL}/ledger/archive`, {
+            method: 'POST',
+            headers: getHeaders(token)
+        });
+        if (!response.ok) throw new Error('Failed to archive expenses');
     }
 };
