@@ -141,9 +141,17 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({ visible, onClose, on
                             onChange={handleProjectChange}
                             dropdownStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
                         >
-                            {projects.map(p => (
-                                <Option key={p.id} value={p.id}>{p.month} - {p.title}</Option>
-                            ))}
+                            {projects
+                                .filter(p => !p.completed)
+                                .sort((a, b) => {
+                                    // Extract numbers from something like "M1", "Month 2" etc.
+                                    const aNum = parseInt(a.month.replace(/\D/g, '')) || Number.MAX_SAFE_INTEGER;
+                                    const bNum = parseInt(b.month.replace(/\D/g, '')) || Number.MAX_SAFE_INTEGER;
+                                    return aNum - bNum;
+                                })
+                                .map(p => (
+                                    <Option key={p.id} value={p.id}>{p.month} - {p.title}</Option>
+                                ))}
                         </Select>
                     </div>
                     <div>
