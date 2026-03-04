@@ -237,15 +237,15 @@ export const AdminDashboard: React.FC = () => {
                 <Card title={<span className="text-red-500">Warp Corruption</span>} className="!bg-black/50 !border-red-900/30">
                     <div className="mb-4">
                         <div className="flex justify-between items-end mb-2">
-                            <label className="text-xs text-zinc-400">Corruption Level (0-100)</label>
-                            <span className={`text-xl font-bold ${localCorruption > 90 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
-                                {localCorruption}%
+                            <label className="text-xs text-zinc-400">Corruption Level (0-1000)</label>
+                            <span className={`text-xl font-bold ${localCorruption > 900 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+                                {localCorruption}
                             </span>
                         </div>
                         <input
                             type="range"
                             min="0"
-                            max="100"
+                            max="1000"
                             value={localCorruption}
                             onChange={e => setLocalCorruption(Number(e.target.value))}
                             className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-red-600"

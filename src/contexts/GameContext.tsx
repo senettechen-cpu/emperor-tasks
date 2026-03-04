@@ -180,7 +180,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const modifyCorruption = (change: number, reason: string) => {
         isDirty.current = true;
-        setCorruption(prev => Math.max(0, Math.min(100, prev + change)));
+        setCorruption(prev => Math.max(0, Math.min(1000, prev + change)));
         if (change !== 0) api.logResourceChange({ category: 'corruption', amount: change, reason });
     };
 
@@ -486,8 +486,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Penitent Mode Trigger
     useEffect(() => {
-        if (corruption >= 100) setIsPenitentMode(true);
-        else if (corruption < 80 && isPenitentMode) setIsPenitentMode(false);
+        if (corruption >= 1000) setIsPenitentMode(true);
+        else if (corruption < 800 && isPenitentMode) setIsPenitentMode(false);
     }, [corruption]);
 
     // Actions
