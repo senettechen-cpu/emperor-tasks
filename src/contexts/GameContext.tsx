@@ -356,21 +356,27 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const timer = setTimeout(async () => {
             const token = await getToken();
             if (!token) return;
-            await api.syncGameState({
-                resources,
-                corruption,
-                ownedUnits,
-                armyStrength,
-                currentMonth,
-                sectorHistory,
+            try {
+                await api.syncGameState({
+                    resources,
+                    corruption,
+                    ownedUnits,
+                    armyStrength,
+                    currentMonth,
+                    sectorHistory,
 
-                isPenitentMode,
-                notificationEmail,
-                emailEnabled,
-                astartes,
-                lastCorruptionTick: lastCorruptionTick ? lastCorruptionTick.toISOString() : null
-            }, token).catch(err => console.error("Sync Failed", err));
-            isDirty.current = false;
+                    isPenitentMode,
+                    notificationEmail,
+                    emailEnabled,
+                    astartes,
+                    lastCorruptionTick: lastCorruptionTick ? lastCorruptionTick.toISOString() : null
+                }, token);
+                // Only release the dirty lock after a confirmed write — otherwise
+                // the next 5s poll would overwrite local state with stale server data.
+                isDirty.current = false;
+            } catch (err) {
+                console.error("Sync Failed, keeping local state dirty for retry:", err);
+            }
         }, 1000); // Debounce 1s
 
         return () => clearTimeout(timer);
