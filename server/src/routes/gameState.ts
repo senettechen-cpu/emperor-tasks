@@ -42,7 +42,8 @@ router.get('/', async (req, res) => {
             ownedUnits: row.owned_units,
             notificationEmail: row.notification_email,
             emailEnabled: row.email_enabled,
-            astartes: row.astartes
+            astartes: row.astartes,
+            lastCorruptionTick: row.last_corruption_tick
         };
         res.json(gameState);
     } catch (err) {
@@ -75,6 +76,7 @@ router.post('/', async (req, res) => {
         if (state.notificationEmail !== undefined) { fields.push(`notification_email = $${idx++}`); values.push(state.notificationEmail); }
         if (state.emailEnabled !== undefined) { fields.push(`email_enabled = $${idx++}`); values.push(state.emailEnabled); }
         if (state.astartes) { fields.push(`astartes = $${idx++}`); values.push(state.astartes); }
+        if (state.lastCorruptionTick !== undefined) { fields.push(`last_corruption_tick = $${idx++}`); values.push(state.lastCorruptionTick); }
 
         if (fields.length === 0) return res.status(400).json({ message: 'No data to sync' });
 

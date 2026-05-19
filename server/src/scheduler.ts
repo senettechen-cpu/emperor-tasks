@@ -30,34 +30,15 @@ if (publicVapidKey && privateVapidKey) {
 const CHECK_INTERVAL_MS = 60000; // Check every 60 seconds
 
 export const startScheduler = () => {
-    console.log('[Scheduler] Warp Corruption Engine & Vox-Link Initialized...');
+    console.log('[Scheduler] Vox-Link Initialized (notifications only)...');
 
     setInterval(async () => {
         try {
-            // 1. Check for Overdue Tasks (Corruption Logic)
-            // Fix: Update corruption ONLY for users who have overdue tasks
-            const overdueUsersResult = await query(
-                `SELECT DISTINCT user_id FROM tasks 
-                 WHERE status = 'active' 
-                 AND due_date < NOW()
-                 AND user_id IS NOT NULL`
-            );
+            // Corruption accumulation is owned by the frontend Corruption Engine
+            // (see src/contexts/GameContext.tsx), which accounts for sector traits,
+            // garrisons, fortification and attrition. Scheduler only handles notifications.
 
-            if (overdueUsersResult.rows.length > 0) {
-                const userIds = overdueUsersResult.rows.map(r => r.user_id);
-                console.log(`[Scheduler] detected overdue tasks for users: ${userIds.join(', ')}`);
-
-                // Update corruption for these users only
-                // We use Postgres ANY() for array matching
-                await query(
-                    `UPDATE game_state 
-                     SET corruption = LEAST(100, corruption + 1) 
-                     WHERE user_id = ANY($1)`,
-                    [userIds]
-                );
-            }
-
-            // 2. Check for Upcoming Tasks (Push Notification Logic)
+            // Check for Upcoming Tasks (Push Notification Logic)
             // Logic: Find tasks due between NOW and NOW + 10 mins
             // AND ensure we haven't spammed them (Need a way to track notification sent? 
             // - For now, let's keep it stateless and simple: 

@@ -122,6 +122,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [activeTacticalScan, setActiveTacticalScan] = useState(false);
     const [fortifiedSectors, setFortifiedSectors] = useState<string[]>([]);
 
+    // Corruption Engine: track last tick wall-clock for offline catch-up
+    const [lastCorruptionTick, setLastCorruptionTick] = useState<Date | null>(null);
+    const lastCorruptionTickRef = React.useRef<Date | null>(null);
+    useEffect(() => { lastCorruptionTickRef.current = lastCorruptionTick; }, [lastCorruptionTick]);
+
 
     const updateSettings = async (email: string, enabled: boolean) => {
         isDirty.current = true;
@@ -314,6 +319,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         }
                         setAstartes(loadedAstartes);
                     }
+                    if (gameState.lastCorruptionTick) {
+                        setLastCorruptionTick(new Date(gameState.lastCorruptionTick));
+                    }
                 }
                 setInitialized(true);
             } catch (err) {
@@ -347,13 +355,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 isPenitentMode,
                 notificationEmail,
                 emailEnabled,
-                astartes
+                astartes,
+                lastCorruptionTick: lastCorruptionTick ? lastCorruptionTick.toISOString() : null
             }, token).catch(err => console.error("Sync Failed", err));
             isDirty.current = false;
         }, 1000); // Debounce 1s
 
         return () => clearTimeout(timer);
-    }, [resources, corruption, ownedUnits, armyStrength, currentMonth, sectorHistory, isPenitentMode, notificationEmail, emailEnabled, astartes, initialized, user, getToken]);
+    }, [resources, corruption, ownedUnits, armyStrength, currentMonth, sectorHistory, isPenitentMode, notificationEmail, emailEnabled, astartes, lastCorruptionTick, initialized, user, getToken]);
 
     // Sector Traits Initialization
     const getTraitForMonth = (monthId: string): PlanetaryTraitType => {
@@ -368,55 +377,67 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return 'barren';                     // Empty
     };
 
-    // Corruption Engine
+    // Corruption Engine — runs every minute while the tab is open, AND on first
+    // load it retroactively catches up using `lastCorruptionTick` for any time
+    // the user was offline. Damage scales with real elapsed minutes.
     useEffect(() => {
-        const timer = setInterval(() => {
+        if (!initialized) return;
+
+        const tick = () => {
             const now = new Date();
+            const lastTick = lastCorruptionTickRef.current;
+
+            // First-ever tick (no prior timestamp): just set baseline, don't apply.
+            if (!lastTick) {
+                setLastCorruptionTick(now);
+                return;
+            }
+
+            const elapsedMs = now.getTime() - lastTick.getTime();
+            // Skip ticks closer than 1 real minute apart (re-runs from dep changes).
+            if (elapsedMs < 60000) return;
+
+            const elapsedMinutes = Math.floor(elapsedMs / 60000);
+
             const todayStr = now.toLocaleDateString();
 
             const overdueTasks = tasks.filter(t => {
                 if (t.status !== 'active') return false;
 
-                // For recurring tasks, they are "active" if not completed today
                 if (t.isRecurring) {
                     const lastCompStr = t.lastCompletedAt ? new Date(t.lastCompletedAt).toLocaleDateString() : '';
-                    // If completed today, not overdue.
                     if (lastCompStr === todayStr) return false;
 
-                    // Check dueTime
-                    let deadline = new Date(t.dueDate); // Default fallback
+                    let deadline = new Date(t.dueDate);
                     if (t.dueTime) {
                         const [hours, minutes] = t.dueTime.split(':').map(Number);
                         deadline = new Date();
                         deadline.setHours(hours, minutes, 0, 0);
                     }
-
                     return deadline < now;
                 }
 
                 return t.dueDate < now;
             }).length;
 
-            const currentMonthIdx = new Date().getMonth();
+            const currentMonthIdx = now.getMonth();
             const currentMonthId = `M${currentMonthIdx + 1}`;
             const currentTrait = getTraitForMonth(currentMonthId);
             const multiplier = currentTrait === 'shrine' ? 0.5 : 1;
 
             if (overdueTasks > 0) {
-                // Check if the current month has a garrison
                 const currentGarrison = armyStrength.garrisons[currentMonthId] || { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
                 const hasGarrison = (currentGarrison.guardsmen || 0) + (currentGarrison.space_marine || 0) + (currentGarrison.custodes || 0) + (currentGarrison.dreadnought || 0) + (currentGarrison.baneblade || 0) > 0;
 
                 if (hasGarrison) {
-                    console.log(`Garrison in ${currentMonthId} is holding the line!`);
-                    // Negate corruption increase (Defense Success)
-                    // Attrition Logic: Loose troops based on overdue count (Simulated)
+                    // Garrison soaks the damage; scales with elapsed minutes.
                     setArmyStrength(prev => {
                         const garrison = { ...prev.garrisons[currentMonthId] };
-                        let damage = overdueTasks;
+                        let damage = overdueTasks * elapsedMinutes;
 
-                        // Guardsmen take damage first
                         let guardsmenLost = 0;
+                        let marinesLost = 0;
+
                         if (garrison.guardsmen >= damage) {
                             guardsmenLost = damage;
                             garrison.guardsmen -= damage;
@@ -426,8 +447,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             damage -= garrison.guardsmen;
                             garrison.guardsmen = 0;
 
-                            // Then Marines
-                            let marinesLost = 0;
                             if (garrison.space_marine >= damage) {
                                 marinesLost = damage;
                                 garrison.space_marine -= damage;
@@ -435,21 +454,20 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             } else {
                                 marinesLost = garrison.space_marine;
                                 garrison.space_marine = Math.max(0, garrison.space_marine - damage);
-                                // Damage propagates... realistically just reduce somewhat
                             }
 
                             if (marinesLost > 0) {
-                                console.warn(`Attrition: Lost ${marinesLost} Space Marines due to overdue tasks.`);
+                                console.warn(`Attrition: Lost ${marinesLost} Space Marines (over ${elapsedMinutes}min).`);
                                 getToken().then(token => {
-                                    if (token) api.logResourceChange({ category: 'unit_loss', amount: -marinesLost, reason: `Attrition: Space Marines lost in ${currentMonthId}` }, token);
+                                    if (token) api.logResourceChange({ category: 'unit_loss', amount: -marinesLost, reason: `Attrition: Space Marines lost in ${currentMonthId} (${elapsedMinutes}min)` }, token);
                                 });
                             }
                         }
 
                         if (guardsmenLost > 0) {
-                            console.warn(`Attrition: Lost ${guardsmenLost} Guardsmen due to overdue tasks.`);
+                            console.warn(`Attrition: Lost ${guardsmenLost} Guardsmen (over ${elapsedMinutes}min).`);
                             getToken().then(token => {
-                                if (token) api.logResourceChange({ category: 'unit_loss', amount: -guardsmenLost, reason: `Attrition: Guardsmen lost in ${currentMonthId}` }, token);
+                                if (token) api.logResourceChange({ category: 'unit_loss', amount: -guardsmenLost, reason: `Attrition: Guardsmen lost in ${currentMonthId} (${elapsedMinutes}min)` }, token);
                             });
                         }
 
@@ -460,29 +478,27 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             totalActivePower: calculateActivePower(newGarrisons)
                         };
                     });
-
                 } else {
-                    // No Garrison - Check Fortification
-                    let corruptionIncrease = overdueTasks * 1 * multiplier;
+                    let corruptionIncrease = overdueTasks * multiplier * elapsedMinutes;
 
                     if (fortifiedSectors.includes(currentMonthId)) {
                         corruptionIncrease *= 0.5;
-                        console.log("Fortification reduced corruption gain.");
                     }
 
-                    if (fortifiedSectors.includes(currentMonthId)) {
-                        corruptionIncrease *= 0.5;
-                        console.log("Fortification reduced corruption gain.");
-                    }
-
-                    modifyCorruption(corruptionIncrease, "Corruption Engine: Overdue Tasks");
+                    const reason = elapsedMinutes > 1
+                        ? `Corruption Engine: Overdue Tasks (catch-up ${elapsedMinutes}min)`
+                        : "Corruption Engine: Overdue Tasks";
+                    modifyCorruption(corruptionIncrease, reason);
                 }
             }
 
-        }, 60000); // Check every minute
+            setLastCorruptionTick(now);
+        };
 
+        tick(); // catch-up on mount / deps change
+        const timer = setInterval(tick, 60000);
         return () => clearInterval(timer);
-    }, [tasks, armyStrength, fortifiedSectors]); // Added dependencies
+    }, [tasks, armyStrength, fortifiedSectors, initialized]);
 
     // Penitent Mode Trigger
     useEffect(() => {

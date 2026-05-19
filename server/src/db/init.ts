@@ -118,6 +118,9 @@ const initDb = async () => {
         // Ledger Archive Migration
         await pool.query('ALTER TABLE expenses ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT FALSE');
 
+        // Corruption Engine: track last tick for offline catch-up
+        await pool.query('ALTER TABLE game_state ADD COLUMN IF NOT EXISTS last_corruption_tick TIMESTAMP WITH TIME ZONE');
+
         console.log('Migrations applied.');
 
         // Initialize default game state if not exists
