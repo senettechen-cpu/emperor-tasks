@@ -127,6 +127,18 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const lastCorruptionTickRef = React.useRef<Date | null>(null);
     useEffect(() => { lastCorruptionTickRef.current = lastCorruptionTick; }, [lastCorruptionTick]);
 
+    // Snapshot inputs the engine reads. Updated every render so the engine
+    // interval (mounted once after init) always sees current data without
+    // having to list these in useEffect deps — which used to remount the
+    // 60s timer every poll cycle and prevent it from ever firing.
+    const engineInputsRef = React.useRef({
+        tasks: [] as Task[],
+        armyStrength: { reserves: {}, garrisons: {}, totalActivePower: 0 } as ArmyStrength,
+        fortifiedSectors: [] as string[],
+        projects: [] as Project[],
+        ownedUnits: [] as string[],
+    });
+
 
     const updateSettings = async (email: string, enabled: boolean) => {
         isDirty.current = true;
@@ -377,11 +389,50 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return 'barren';                     // Empty
     };
 
+    // Keep the engine input snapshot fresh on every render.
+    engineInputsRef.current = { tasks, armyStrength, fortifiedSectors, projects, ownedUnits };
+
     // Corruption Engine — runs every minute while the tab is open, AND on first
     // load it retroactively catches up using `lastCorruptionTick` for any time
     // the user was offline. Damage scales with real elapsed minutes.
     useEffect(() => {
         if (!initialized) return;
+
+        // Local helpers that read fresh data via the ref so this effect can
+        // stay mounted (deps = [initialized]) without going stale.
+        const computeTrait = (monthId: string): PlanetaryTraitType => {
+            const monthProjects = engineInputsRef.current.projects.filter(p => p.month === monthId);
+            const count = monthProjects.length;
+            if (count >= 8) return 'death';
+            if (count >= 5) return 'forge';
+            if (count >= 3) return 'shrine';
+            if (count >= 1) return 'hive';
+            return 'barren';
+        };
+
+        const computeActivePower = (garrisons: Record<string, Record<UnitType, number>>) => {
+            const POWER: Record<UnitType, number> = {
+                guardsmen: 50, space_marine: 300, custodes: 1500, dreadnought: 500, baneblade: 5000,
+                wolf_guard: 400, phalanx_warder: 400, purifier: 400, pyroclast: 400, redemptor_dreadnought: 2000
+            };
+            let total = 0;
+            Object.values(garrisons).forEach((g) => {
+                total += (g.guardsmen || 0) * POWER.guardsmen;
+                total += (g.space_marine || 0) * POWER.space_marine;
+                total += (g.custodes || 0) * POWER.custodes;
+                total += (g.dreadnought || 0) * POWER.dreadnought;
+                total += (g.baneblade || 0) * POWER.baneblade;
+                total += (g.wolf_guard || 0) * POWER.wolf_guard;
+                total += (g.phalanx_warder || 0) * POWER.phalanx_warder;
+                total += (g.purifier || 0) * POWER.purifier;
+                total += (g.pyroclast || 0) * POWER.pyroclast;
+                total += (g.redemptor_dreadnought || 0) * POWER.redemptor_dreadnought;
+            });
+            const owned = engineInputsRef.current.ownedUnits;
+            if (owned.includes('librarian')) total += 1000;
+            if (owned.includes('barge')) total += 10000;
+            return total;
+        };
 
         const tick = () => {
             const now = new Date();
@@ -394,14 +445,15 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
 
             const elapsedMs = now.getTime() - lastTick.getTime();
-            // Skip ticks closer than 1 real minute apart (re-runs from dep changes).
+            // Skip ticks closer than 1 real minute apart.
             if (elapsedMs < 60000) return;
 
             const elapsedMinutes = Math.floor(elapsedMs / 60000);
 
             const todayStr = now.toLocaleDateString();
+            const { tasks: curTasks, armyStrength: curArmy, fortifiedSectors: curForts } = engineInputsRef.current;
 
-            const overdueTasks = tasks.filter(t => {
+            const overdueTasks = curTasks.filter(t => {
                 if (t.status !== 'active') return false;
 
                 if (t.isRecurring) {
@@ -422,11 +474,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             const currentMonthIdx = now.getMonth();
             const currentMonthId = `M${currentMonthIdx + 1}`;
-            const currentTrait = getTraitForMonth(currentMonthId);
+            const currentTrait = computeTrait(currentMonthId);
             const multiplier = currentTrait === 'shrine' ? 0.5 : 1;
 
             if (overdueTasks > 0) {
-                const currentGarrison = armyStrength.garrisons[currentMonthId] || { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
+                const currentGarrison = curArmy.garrisons[currentMonthId] || { guardsmen: 0, space_marine: 0, custodes: 0, dreadnought: 0, baneblade: 0 };
                 const hasGarrison = (currentGarrison.guardsmen || 0) + (currentGarrison.space_marine || 0) + (currentGarrison.custodes || 0) + (currentGarrison.dreadnought || 0) + (currentGarrison.baneblade || 0) > 0;
 
                 if (hasGarrison) {
@@ -475,13 +527,13 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         return {
                             ...prev,
                             garrisons: newGarrisons,
-                            totalActivePower: calculateActivePower(newGarrisons)
+                            totalActivePower: computeActivePower(newGarrisons)
                         };
                     });
                 } else {
                     let corruptionIncrease = overdueTasks * multiplier * elapsedMinutes;
 
-                    if (fortifiedSectors.includes(currentMonthId)) {
+                    if (curForts.includes(currentMonthId)) {
                         corruptionIncrease *= 0.5;
                     }
 
@@ -495,10 +547,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setLastCorruptionTick(now);
         };
 
-        tick(); // catch-up on mount / deps change
+        tick(); // immediate run on mount handles offline catch-up.
         const timer = setInterval(tick, 60000);
         return () => clearInterval(timer);
-    }, [tasks, armyStrength, fortifiedSectors, initialized]);
+    }, [initialized]);
 
     // Penitent Mode Trigger
     useEffect(() => {
