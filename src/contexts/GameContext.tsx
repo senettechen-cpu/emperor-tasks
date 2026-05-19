@@ -534,11 +534,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Revert or retry logic?
         }
 
-        // Immediate Logic: Check for Heresy (Overdue on Attribute)
-        // Immediate Logic: Check for Heresy (Overdue on Attribute)
-        if (dueDate < new Date()) {
-            modifyCorruption(10, "Task Created: Overdue (Heresy)");
-        } else {
+        // Overdue tasks no longer burst +10 on creation. The Corruption Engine
+        // accrues +1/min per overdue task until the task is purged.
+        if (dueDate >= new Date()) {
             modifyCorruption(-1, "Task Created: Diligence");
         }
     };
